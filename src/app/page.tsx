@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import {
   AreaChart,
@@ -72,6 +72,7 @@ const CustomTooltipContent = ({
 
 export default function DashboardPage() {
   const { user } = useUser();
+  const toastIdRef = useRef(0);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -81,9 +82,9 @@ export default function DashboardPage() {
 
   // Date states
   const [dateFilter, setDateFilter] = useState<
-    "today" | "7days" | "30days" | "all" | "custom"
-  >("30days");
-  const [dateFilterText, setDateFilterText] = useState("Últimos 30 días");
+    "1day" | "7days" | "15days" | "30days" | "custom"
+  >("15days");
+  const [dateFilterText, setDateFilterText] = useState("Últimos 15 días");
   const [showDropdown, setShowDropdown] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -96,6 +97,8 @@ export default function DashboardPage() {
   const [chartTab, setChartTab] = useState<"calificaciones" | "volume">(
     "calificaciones"
   );
+
+
 
   // Toasts state
   const [toasts, setToasts] = useState<
@@ -118,7 +121,8 @@ export default function DashboardPage() {
 
   // Toast notification trigger
   const showToast = (message: string, icon = "info") => {
-    const toastId = Date.now();
+    toastIdRef.current += 1;
+    const toastId = toastIdRef.current;
     setToasts((prev) => [...prev, { id: toastId, message, icon }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== toastId));
@@ -128,7 +132,7 @@ export default function DashboardPage() {
   // Handle Tab navigation
   const handleNavClick = (tabName: string) => {
     setActiveTab(tabName);
-    if (tabName !== "Dashboard") {
+    if (tabName !== "Dashboard" && tabName !== "Calificaciones") {
       showToast(`Cargando sección de ${tabName}... (Próximamente)`, "dns");
     }
   };
@@ -140,10 +144,10 @@ export default function DashboardPage() {
 
       // Set default dates
       const today = new Date();
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(today.getDate() - 30);
+      const fifteenDaysAgo = new Date();
+      fifteenDaysAgo.setDate(today.getDate() - 15);
 
-      setStartDate(formatDateString(thirtyDaysAgo));
+      setStartDate(formatDateString(fifteenDaysAgo));
       setEndDate(formatDateString(today));
     }, 0);
     return () => clearTimeout(timer);
@@ -180,7 +184,7 @@ export default function DashboardPage() {
 
   // Handle Dropdown Filter Item click
   const handleRangeSelect = (
-    type: "today" | "7days" | "30days" | "all" | "custom"
+    type: "1day" | "7days" | "15days" | "30days" | "custom"
   ) => {
     setDateFilter(type);
     setShowDropdown(false);
@@ -190,17 +194,18 @@ export default function DashboardPage() {
       const newStart = new Date();
       let label = "";
 
-      if (type === "today") {
-        label = "Hoy";
+      if (type === "1day") {
+        newStart.setDate(today.getDate() - 1);
+        label = "Último día";
       } else if (type === "7days") {
         newStart.setDate(today.getDate() - 7);
         label = "Últimos 7 días";
+      } else if (type === "15days") {
+        newStart.setDate(today.getDate() - 15);
+        label = "Últimos 15 días";
       } else if (type === "30days") {
         newStart.setDate(today.getDate() - 30);
         label = "Últimos 30 días";
-      } else if (type === "all") {
-        newStart.setDate(today.getDate() - 365);
-        label = "Histórico";
       }
 
       setDateFilterText(label);
@@ -216,9 +221,16 @@ export default function DashboardPage() {
     }
   };
 
-  // Close dropdown on click outside
+  // Close dropdowns on click outside
   useEffect(() => {
-    const handleOutsideClick = () => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.closest("#dateFilterBtn") ||
+        target.closest("#dateDropdown")
+      ) {
+        return;
+      }
       setShowDropdown(false);
     };
     document.addEventListener("click", handleOutsideClick);
@@ -299,15 +311,9 @@ export default function DashboardPage() {
     return stars;
   };
 
-  // Audit triggers
-  const handleAudit = (id: string) => {
-    showToast(`Iniciando auditoría para la reseña ${id}.`, "shield_alert");
-  };
+
 
   // User details for footer
-  const userInitial = user?.firstName
-    ? user.firstName.charAt(0).toUpperCase()
-    : "A";
   const userFullName =
     user?.fullName ||
     user?.primaryEmailAddress?.emailAddress ||
@@ -399,7 +405,9 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="dashboard-main">
-        <header className="dashboard-header">
+        {activeTab === "Dashboard" && (
+          <>
+            <header className="dashboard-header">
           <div className="header-title">
             <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               Analytics Dashboard
@@ -452,12 +460,13 @@ export default function DashboardPage() {
               <div
                 className={`date-dropdown ${showDropdown ? "show" : ""}`}
                 id="dateDropdown"
+                onClick={(e) => e.stopPropagation()}
               >
                 <button
                   className="dropdown-item"
-                  onClick={() => handleRangeSelect("today")}
+                  onClick={() => handleRangeSelect("1day")}
                 >
-                  Hoy
+                  Último día
                 </button>
                 <button
                   className="dropdown-item"
@@ -467,15 +476,15 @@ export default function DashboardPage() {
                 </button>
                 <button
                   className="dropdown-item"
-                  onClick={() => handleRangeSelect("30days")}
+                  onClick={() => handleRangeSelect("15days")}
                 >
-                  Últimos 30 días
+                  Últimos 15 días
                 </button>
                 <button
                   className="dropdown-item"
-                  onClick={() => handleRangeSelect("all")}
+                  onClick={() => handleRangeSelect("30days")}
                 >
-                  Histórico
+                  Últimos 30 días
                 </button>
                 <button
                   className="dropdown-item"
@@ -484,33 +493,37 @@ export default function DashboardPage() {
                   Personalizado
                 </button>
               </div>
-            </div>
 
-            {dateFilter === "custom" && (
-              <div className="flex items-center gap-2 p-1.5 bg-slate-900/60 border border-slate-800 rounded-lg ml-2">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    if (e.target.value && endDate)
-                      fetchData(e.target.value, endDate);
-                  }}
-                  className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:outline-none focus:border-blue-500"
-                />
-                <span className="text-slate-600 text-xs">a</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => {
-                    setEndDate(e.target.value);
-                    if (startDate && e.target.value)
-                      fetchData(startDate, e.target.value);
-                  }}
-                  className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-            )}
+              {/* Custom date range inputs positioned absolutely below the selector button */}
+              {dateFilter === "custom" && !showDropdown && (
+                <div
+                  className="flex items-center gap-2 p-2 bg-slate-950/95 border border-slate-800 rounded-lg absolute top-[110%] right-0 z-50 shadow-2xl w-[280px] justify-between"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      if (e.target.value && endDate)
+                        fetchData(e.target.value, endDate);
+                    }}
+                    className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:outline-none focus:border-blue-500 w-[115px]"
+                  />
+                  <span className="text-slate-600 text-xs px-1">a</span>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      if (startDate && e.target.value)
+                        fetchData(startDate, e.target.value);
+                    }}
+                    className="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300 focus:outline-none focus:border-blue-500 w-[115px]"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -634,7 +647,7 @@ export default function DashboardPage() {
           <div className="kpi-card">
             <div className="kpi-header">
               <span className="kpi-title">Calificación Promedio</span>
-              <div className="kpi-icon red">
+              <div className="kpi-icon purple" style={{ color: "#8b5cf6", background: "rgba(139, 92, 246, 0.1)" }}>
                 <span className="material-symbols-outlined">star</span>
               </div>
             </div>
@@ -663,7 +676,7 @@ export default function DashboardPage() {
         {/* Charts Section */}
         <section className="charts-grid">
           {/* Recharts Area and Bar Chart */}
-          <div className="card">
+          <div className="card" style={{ minWidth: 0 }}>
             <div className="card-header">
               <h3 className="card-title">
                 {chartTab === "calificaciones"
@@ -700,6 +713,7 @@ export default function DashboardPage() {
               ) : metrics && metrics.ratingTrends.length > 0 ? (
                 chartTab === "calificaciones" ? (
                   <ResponsiveContainer
+                    key={`${startDate}_${endDate}`}
                     width="100%"
                     height="100%"
                     minWidth={0}
@@ -795,6 +809,7 @@ export default function DashboardPage() {
                   </ResponsiveContainer>
                 ) : (
                   <ResponsiveContainer
+                    key={`${startDate}_${endDate}`}
                     width="100%"
                     height="100%"
                     minWidth={0}
@@ -887,87 +902,264 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Bottom Grid — only the Feedback reviews auditing section */}
-        <section className="bottom-grid" style={{ gridTemplateColumns: "1fr" }}>
-          {/* Recent Reviews Auditing Section */}
-          <div className="card">
-            <div className="card-header">
-              <h3 className="card-title">
-                Reseñas de Baja Calificación (Auditoría)
-              </h3>
-              <button
-                className="pill"
-                onClick={() =>
-                  showToast(
-                    "Cargando listado completo de reseñas...",
-                    "reviews"
-                  )
-                }
-              >
-                Ver todas
-              </button>
-            </div>
-            <div className="rating-list">
-              {loading ? (
-                Array.from({ length: 2 }).map((_, idx) => (
-                  <div className="rating-item animate-pulse" key={idx}>
-                    <div className="h-4 bg-white/5 w-1/4 rounded mb-2" />
-                    <div className="h-3 bg-white/5 w-3/4 rounded" />
-                  </div>
-                ))
-              ) : metrics &&
-                metrics.worstReviews &&
-                metrics.worstReviews.length > 0 ? (
-                metrics.worstReviews.slice(0, 3).map((review) => (
-                  <div className="rating-item" key={review.id}>
-                    <div className="rating-header">
-                      <span className="rating-user">
-                        {review.author} (a {review.recipient})
-                      </span>
-                      <div className="rating-stars">
-                        {renderStars(review.rating)}
-                      </div>
-                    </div>
-                    <p className="rating-comment">&quot;{review.comment}&quot;</p>
 
-                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/5">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                            review.authorRole === "Rider"
-                              ? "bg-blue-950/40 text-blue-400 border border-blue-900/30"
-                              : "bg-violet-950/40 text-violet-400 border border-violet-900/30"
-                          }`}
-                        >
-                          {review.authorRole === "Rider"
-                            ? "Pasajero"
-                            : "Conductor"}
-                        </span>
-                        {review.reported && (
-                          <span className="bg-red-950/40 text-red-400 border border-red-900/50 px-1.5 py-0.5 rounded text-[10px] font-bold">
-                            Reportada
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleAudit(review.id)}
-                        className="pill"
-                        style={{ padding: "0.2rem 0.5rem", fontSize: "0.7rem" }}
-                      >
-                        Auditar
-                      </button>
-                    </div>
+          </>
+        )}
+
+        {/* Calificaciones View */}
+        {activeTab === "Calificaciones" && (
+          <>
+            <header className="dashboard-header">
+              <div className="header-title">
+                <h2>Calificaciones y Reseñas</h2>
+                <p>
+                  Consolidación, auditoría e historial completo de calificaciones.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Back to Dashboard Button */}
+                <button
+                  onClick={() => setActiveTab("Dashboard")}
+                  className="pill flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "1.1rem" }}>
+                    arrow_back
+                  </span>
+                  Dashboard
+                </button>
+              </div>
+            </header>
+
+            {/* Feedback Stats Grid */}
+            <section className="kpi-grid mb-6">
+              {/* KPI 1 - Driver Avg Rating */}
+              <div className="kpi-card">
+                <div className="kpi-header">
+                  <span className="kpi-title">Calificación Conductores</span>
+                  <div className="kpi-icon blue">
+                    <span className="material-symbols-outlined">directions_car</span>
                   </div>
-                ))
-              ) : (
-                <div className="p-6 text-center text-slate-500 font-medium">
-                  No se encontraron reseñas con baja calificación en el período
-                  seleccionado.
                 </div>
-              )}
-            </div>
+                {loading ? (
+                  <div className="h-8 w-24 bg-white/5 rounded animate-pulse my-2" />
+                ) : metrics?.averageDriverRating != null ? (
+                  <div className="kpi-value">{metrics.averageDriverRating} / 5</div>
+                ) : (
+                  <div className="kpi-value" style={{ color: "var(--text-muted)", fontSize: "1.2rem" }}>—</div>
+                )}
+                <div className="rating-stars mt-1 flex">
+                  {metrics?.averageDriverRating != null && renderStars(metrics.averageDriverRating)}
+                </div>
+              </div>
+
+              {/* KPI 2 - Passenger Avg Rating */}
+              <div className="kpi-card">
+                <div className="kpi-header">
+                  <span className="kpi-title">Calificación Pasajeros</span>
+                  <div className="kpi-icon purple" style={{ color: "#8b5cf6", background: "rgba(139, 92, 246, 0.1)" }}>
+                    <span className="material-symbols-outlined">person</span>
+                  </div>
+                </div>
+                {loading ? (
+                  <div className="h-8 w-24 bg-white/5 rounded animate-pulse my-2" />
+                ) : metrics?.averagePassengerRating != null ? (
+                  <div className="kpi-value">{metrics.averagePassengerRating} / 5</div>
+                ) : (
+                  <div className="kpi-value" style={{ color: "var(--text-muted)", fontSize: "1.2rem" }}>—</div>
+                )}
+                <div className="rating-stars mt-1 flex">
+                  {metrics?.averagePassengerRating != null && renderStars(metrics.averagePassengerRating)}
+                </div>
+              </div>
+
+              {/* KPI 3 - Review Completion Rate */}
+              <div className="kpi-card">
+                <div className="kpi-header">
+                  <span className="kpi-title">Tasa de Respuesta</span>
+                  <div className="kpi-icon green">
+                    <span className="material-symbols-outlined">percent</span>
+                  </div>
+                </div>
+                {loading ? (
+                  <div className="h-8 w-24 bg-white/5 rounded animate-pulse my-2" />
+                ) : metrics?.reviewCompletionRate != null ? (
+                  <div className="kpi-value">{metrics.reviewCompletionRate}%</div>
+                ) : (
+                  <div className="kpi-value" style={{ color: "var(--text-muted)", fontSize: "1.2rem" }}>—</div>
+                )}
+                <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mt-3">
+                  <div
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${metrics?.reviewCompletionRate ?? 0}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* KPI 4 - Total Reviews */}
+              <div className="kpi-card">
+                <div className="kpi-header">
+                  <span className="kpi-title">Total Reseñas</span>
+                  <div className="kpi-icon orange">
+                    <span className="material-symbols-outlined">rate_review</span>
+                  </div>
+                </div>
+                {loading ? (
+                  <div className="h-8 w-24 bg-white/5 rounded animate-pulse my-2" />
+                ) : metrics?.totalReviews != null ? (
+                  <div className="kpi-value">{metrics.totalReviews}</div>
+                ) : (
+                  <div className="kpi-value" style={{ color: "var(--text-muted)", fontSize: "1.2rem" }}>—</div>
+                )}
+                <div className="text-xs text-slate-400 mt-2 font-medium">
+                  Volumen total de feedback generado
+                </div>
+              </div>
+            </section>
+
+            {/* Feedback Charts Grid */}
+            <section className="charts-grid mb-6">
+              {/* Chart 1: Rating Evolution */}
+              <div className="card" style={{ minWidth: 0 }}>
+                <div className="card-header">
+                  <h3 className="card-title">Evolución de Calificaciones</h3>
+                </div>
+                <div className="chart-container">
+                  {loading ? (
+                    <div className="w-full h-full bg-white/5 rounded animate-pulse flex items-center justify-center">
+                      <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Cargando gráfico...</span>
+                    </div>
+                  ) : metrics && metrics.ratingTrends.length > 0 ? (
+                    <ResponsiveContainer key={`${startDate}_${endDate}`} width="100%" height="100%" minWidth={0} minHeight={0}>
+                      <AreaChart data={metrics.ratingTrends} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorDriverTab" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="colorPassengerTab" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                        <XAxis
+                          dataKey="date"
+                          stroke="#475569"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(val) => {
+                            const parts = val.split("-");
+                            return parts.length === 3 ? `${parts[2]}/${parts[1]}` : val;
+                          }}
+                        />
+                        <YAxis
+                          stroke="#475569"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false}
+                          domain={[3.5, 5.0]}
+                          ticks={[3.5, 4.0, 4.5, 5.0]}
+                        />
+                        <Tooltip content={<CustomTooltipContent />} />
+                        <Area
+                          type="monotone"
+                          dataKey="avgDriverRating"
+                          name="avgDriverRating"
+                          stroke="#3b82f6"
+                          strokeWidth={3}
+                          fillOpacity={1}
+                          fill="url(#colorDriverTab)"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="avgPassengerRating"
+                          name="avgPassengerRating"
+                          stroke="#8b5cf6"
+                          strokeWidth={3}
+                          fillOpacity={1}
+                          fill="url(#colorPassengerTab)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="w-full h-full bg-white/5 rounded flex items-center justify-center text-slate-500">
+                      <span>Sin datos de calificaciones en este rango</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Chart 2: Review Volume */}
+              <div className="card" style={{ minWidth: 0 }}>
+                <div className="card-header">
+                  <h3 className="card-title">Volumen de Reseñas por Día</h3>
+                </div>
+                <div className="chart-container">
+                  {loading ? (
+                    <div className="w-full h-full bg-white/5 rounded animate-pulse flex items-center justify-center">
+                      <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Cargando gráfico...</span>
+                    </div>
+                  ) : metrics && metrics.ratingTrends.length > 0 ? (
+                    <ResponsiveContainer key={`${startDate}_${endDate}`} width="100%" height="100%" minWidth={0} minHeight={0}>
+                      <BarChart data={metrics.ratingTrends} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                        <XAxis
+                          dataKey="date"
+                          stroke="#475569"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(val) => {
+                            const parts = val.split("-");
+                            return parts.length === 3 ? `${parts[2]}/${parts[1]}` : val;
+                          }}
+                        />
+                        <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
+                        <Tooltip content={<CustomTooltipContent />} />
+                        <Bar
+                          dataKey="reviewCount"
+                          name="reviewCount"
+                          fill="#8b5cf6"
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={20}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="w-full h-full bg-white/5 rounded flex items-center justify-center text-slate-500">
+                      <span>Sin datos de volumen de reseñas</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+
+
+          </>
+        )}
+
+        {/* Placeholder views for other sections */}
+        {activeTab !== "Dashboard" && activeTab !== "Calificaciones" && (
+          <div className="flex flex-col items-center justify-center py-20 card text-center">
+            <span className="material-symbols-outlined text-5xl text-blue-500 mb-4 animate-bounce">
+              construction
+            </span>
+            <h3 className="text-xl font-bold text-slate-200 mb-2">
+              Sección en Construcción
+            </h3>
+            <p className="text-slate-400 max-w-md text-sm mb-6">
+              La sección de {activeTab} se encuentra planificada para la siguiente etapa de desarrollo de la plataforma WeShuttle.
+            </p>
+            <button
+              onClick={() => setActiveTab("Dashboard")}
+              className="pill active"
+            >
+              Volver al Dashboard
+            </button>
           </div>
-        </section>
+        )}
       </main>
 
       {/* React Toast Container */}

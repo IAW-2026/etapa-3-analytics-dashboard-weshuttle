@@ -32,12 +32,12 @@ export async function GET(request: NextRequest) {
   const startDate = searchParams.get("start_date");
   const endDate = searchParams.get("end_date");
 
-  // Fallback dates: default to the last 30 days
+  // Fallback dates: default to the last 15 days
   const today = new Date();
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(today.getDate() - 30);
+  const fifteenDaysAgo = new Date();
+  fifteenDaysAgo.setDate(today.getDate() - 15);
 
-  const start = startDate || thirtyDaysAgo.toISOString().split("T")[0];
+  const start = startDate || fifteenDaysAgo.toISOString().split("T")[0];
   const end = endDate || today.toISOString().split("T")[0];
 
   const feedbackAppApiUrl = process.env.FEEDBACK_APP_API_URL;
