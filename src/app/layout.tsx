@@ -24,6 +24,9 @@ export default function RootLayout({
         lang="es"
         className={`${inter.variable} h-full antialiased`}
       >
+        <head>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" />
+        </head>
         <body className="min-h-full flex flex-col font-sans bg-slate-950 text-slate-100">
           {children}
         </body>

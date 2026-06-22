@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateMockAnalyticsData, RatingTrendPoint, ReviewItem } from "@/lib/mockData";
+import { RatingTrendPoint, ReviewItem } from "@/lib/types";
 
 interface FeedbackMetrics {
   averageDriverRating?: number;
@@ -10,16 +10,21 @@ interface FeedbackMetrics {
   worstReviews?: ReviewItem[];
 }
 
-interface PaymentsMetrics {
-  totalRevenue?: number;
-}
-
-interface DriverMetrics {
-  completedRides?: number;
-}
-
-interface RiderMetrics {
-  activeUsers?: number;
+interface RiderSummaryMetrics {
+  passengers: {
+    total: number;
+    active: number;
+  };
+  reservations: {
+    total: number;
+    by_status: Record<string, number>;
+    by_destination: Record<string, number>;
+  };
+  financials: {
+    total_max_price: number;
+    total_amount_charged: number;
+    total_credit_applied: number;
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -27,142 +32,116 @@ export async function GET(request: NextRequest) {
   const startDate = searchParams.get("start_date");
   const endDate = searchParams.get("end_date");
 
-  // Fallback dates: default to the last 15 days
+  // Fallback dates: default to the last 30 days
   const today = new Date();
-  const fifteenDaysAgo = new Date();
-  fifteenDaysAgo.setDate(today.getDate() - 15);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
 
-  const start = startDate || fifteenDaysAgo.toISOString().split("T")[0];
+  const start = startDate || thirtyDaysAgo.toISOString().split("T")[0];
   const end = endDate || today.toISOString().split("T")[0];
 
   const feedbackAppApiUrl = process.env.FEEDBACK_APP_API_URL;
-  const paymentsAppApiUrl = process.env.PAYMENTS_APP_API_URL;
-  const driverAppApiUrl = process.env.DRIVER_APP_API_URL;
   const riderAppApiUrl = process.env.RIDER_APP_API_URL;
 
-  // Build fetch promises with a 4-second timeout to maintain responsive page loads
-  const feedbackPromise = feedbackAppApiUrl 
-    ? fetch(`${feedbackAppApiUrl}/api/ratings/analytics/metrics?start_date=${start}&end_date=${end}`, { 
-        signal: AbortSignal.timeout(4000),
-        cache: 'no-store'
-      })
+
+  // Fetch Feedback App metrics
+  const feedbackPromise = feedbackAppApiUrl
+    ? fetch(
+      `${feedbackAppApiUrl}/api/ratings/analytics/metrics?start_date=${start}&end_date=${end}`,
+      {
+        signal: AbortSignal.timeout(6000),
+        cache: "no-store",
+      }
+    )
     : Promise.reject(new Error("FEEDBACK_APP_API_URL is not configured"));
 
-  const paymentsPromise = paymentsAppApiUrl
-    ? fetch(`${paymentsAppApiUrl}/api/payments/analytics/metrics?start_date=${start}&end_date=${end}`, { 
-        signal: AbortSignal.timeout(4000),
-        cache: 'no-store'
-      })
-    : Promise.reject(new Error("PAYMENTS_APP_API_URL is not configured"));
-
-  const driverPromise = driverAppApiUrl
-    ? fetch(`${driverAppApiUrl}/api/drivers/analytics/metrics?start_date=${start}&end_date=${end}`, { 
-        signal: AbortSignal.timeout(4000),
-        cache: 'no-store'
-      })
-    : Promise.reject(new Error("DRIVER_APP_API_URL is not configured"));
-
+  // Fetch Rider App analytics summary
   const riderPromise = riderAppApiUrl
-    ? fetch(`${riderAppApiUrl}/api/riders/analytics/metrics?start_date=${start}&end_date=${end}`, { 
-        signal: AbortSignal.timeout(4000),
-        cache: 'no-store'
-      })
+    ? fetch(`${riderAppApiUrl}/api/analytics/summary`, {
+      signal: AbortSignal.timeout(6000),
+      cache: "no-store",
+    })
     : Promise.reject(new Error("RIDER_APP_API_URL is not configured"));
 
-  // Fetch all endpoints concurrently using Promise.allSettled
-  const results = await Promise.allSettled([
+  // Fetch all endpoints concurrently
+  const [feedbackResult, riderResult] = await Promise.allSettled([
     feedbackPromise,
-    paymentsPromise,
-    driverPromise,
-    riderPromise
+    riderPromise,
   ]);
 
   const responseStatus: Record<string, { status: string; error: string | null }> = {
     feedback: { status: "unknown", error: null },
-    payments: { status: "unknown", error: null },
-    driver: { status: "unknown", error: null },
     rider: { status: "unknown", error: null },
   };
 
   let feedbackData: FeedbackMetrics | null = null;
-  let paymentsData: PaymentsMetrics | null = null;
-  let driverData: DriverMetrics | null = null;
-  let riderData: RiderMetrics | null = null;
+  let riderData: RiderSummaryMetrics | null = null;
 
   // Helper to parse settled fetch results
-  const parseResult = async <T,>(result: PromiseSettledResult<Response>, key: string): Promise<T | null> => {
+  const parseResult = async <T>(
+    result: PromiseSettledResult<Response>,
+    key: string
+  ): Promise<T | null> => {
     if (result.status === "fulfilled") {
       const response = result.value;
       if (response.ok) {
         try {
-          const data = await response.json() as T;
+          const data = (await response.json()) as T;
           responseStatus[key] = { status: "success", error: null };
           return data;
         } catch (err) {
           const errMsg = err instanceof Error ? err.message : String(err);
-          responseStatus[key] = { status: "error", error: `Invalid JSON: ${errMsg}` };
+          responseStatus[key] = {
+            status: "error",
+            error: `Invalid JSON: ${errMsg}`,
+          };
         }
       } else {
-        responseStatus[key] = { status: "error", error: `HTTP ${response.status}: ${response.statusText}` };
+        responseStatus[key] = {
+          status: "error",
+          error: `HTTP ${response.status}: ${response.statusText}`,
+        };
       }
     } else {
       const reason = result.reason;
-      const errMsg = reason instanceof Error ? reason.message : String(reason || "Network request failed");
+      const errMsg =
+        reason instanceof Error
+          ? reason.message
+          : String(reason || "Network request failed");
       responseStatus[key] = { status: "error", error: errMsg };
     }
     return null;
   };
 
-  // Parse results in parallel
-  feedbackData = await parseResult<FeedbackMetrics>(results[0], "feedback");
-  paymentsData = await parseResult<PaymentsMetrics>(results[1], "payments");
-  driverData = await parseResult<DriverMetrics>(results[2], "driver");
-  riderData = await parseResult<RiderMetrics>(results[3], "rider");
+  feedbackData = await parseResult<FeedbackMetrics>(feedbackResult, "feedback");
+  riderData = await parseResult<RiderSummaryMetrics>(riderResult, "rider");
 
-  // Generate complete fallback mock data
-  const mockData = generateMockAnalyticsData(start, end);
+  // Build metrics only from real data — no mocks, no fallbacks with invented values
+  const metrics = {
+    // From Rider App
+    totalReservations: riderData?.reservations?.total ?? null,
+    activeUsers: riderData?.passengers?.active ?? null,
+    totalAmountCharged: riderData?.financials?.total_amount_charged ?? null,
+    destinations: riderData?.reservations?.by_destination ?? null,
+    reservationsByStatus: riderData?.reservations?.by_status ?? null,
 
-  // Consolidate values. Use real service data if successful, else fall back to mock data
-  const finalMetrics = { ...mockData };
+    // From Feedback App
+    averageDriverRating: feedbackData?.averageDriverRating ?? null,
+    averagePassengerRating: feedbackData?.averagePassengerRating ?? null,
+    reviewCompletionRate: feedbackData?.reviewCompletionRate ?? null,
+    totalReviews: feedbackData?.totalReviews ?? null,
+    ratingTrends: feedbackData?.ratingTrends ?? [],
+    worstReviews: feedbackData?.worstReviews ?? [],
+  };
 
-  // 1. Feedback app consolidation
-  if (responseStatus.feedback.status === "success" && feedbackData) {
-    finalMetrics.averageDriverRating = feedbackData.averageDriverRating ?? mockData.averageDriverRating;
-    finalMetrics.averagePassengerRating = feedbackData.averagePassengerRating ?? mockData.averagePassengerRating;
-    finalMetrics.reviewCompletionRate = feedbackData.reviewCompletionRate ?? mockData.reviewCompletionRate;
-    finalMetrics.totalReviews = feedbackData.totalReviews ?? mockData.totalReviews;
-    if (feedbackData.ratingTrends) {
-      finalMetrics.ratingTrends = feedbackData.ratingTrends;
-    }
-    if (feedbackData.worstReviews) {
-      finalMetrics.worstReviews = feedbackData.worstReviews;
-    }
-  }
-
-  // 2. Payments app consolidation (Simulated for now, but ready for future integration)
-  if (responseStatus.payments.status === "success" && paymentsData) {
-    finalMetrics.totalRevenue = paymentsData.totalRevenue ?? mockData.totalRevenue;
-  }
-
-  // 3. Driver & Rider app consolidation (Simulated for now, but ready for future integration)
-  if (responseStatus.driver.status === "success" && driverData) {
-    finalMetrics.completedRides = driverData.completedRides ?? mockData.completedRides;
-  }
-  if (responseStatus.rider.status === "success" && riderData) {
-    finalMetrics.activeUsers = riderData.activeUsers ?? mockData.activeUsers;
-  }
-
-  // Return consolidated metrics and the connection status of each service
   return NextResponse.json({
-    metrics: finalMetrics,
+    metrics,
     status: responseStatus,
     meta: {
       startDate: start,
       endDate: end,
-      isFeedbackMocked: responseStatus.feedback.status !== "success",
-      isPaymentsMocked: responseStatus.payments.status !== "success",
-      isDriverMocked: responseStatus.driver.status !== "success",
-      isRiderMocked: responseStatus.rider.status !== "success",
-    }
+      isFeedbackOnline: responseStatus.feedback.status === "success",
+      isRiderOnline: responseStatus.rider.status === "success",
+    },
   });
 }

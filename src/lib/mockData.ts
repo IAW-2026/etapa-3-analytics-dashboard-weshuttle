@@ -29,6 +29,7 @@ export interface AnalyticsMetrics {
   activeUsers: number;
   ratingTrends: RatingTrendPoint[];
   worstReviews: ReviewItem[];
+  destinations?: Record<string, number>;
 }
 
 const worstCommentsMock: Omit<ReviewItem, 'id' | 'date'>[] = [
