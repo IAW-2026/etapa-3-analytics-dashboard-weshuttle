@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta-sans",
   subsets: ["latin"],
 });
 
@@ -22,12 +22,12 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="es"
-        className={`${inter.variable} h-full antialiased`}
+        className={`${plusJakartaSans.variable} h-full antialiased`}
       >
         <head>
           <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" />
         </head>
-        <body className="min-h-full flex flex-col font-sans bg-slate-950 text-slate-100">
+        <body className="min-h-full flex flex-col font-sans bg-[#11131b] text-slate-100">
           {children}
         </body>
       </html>

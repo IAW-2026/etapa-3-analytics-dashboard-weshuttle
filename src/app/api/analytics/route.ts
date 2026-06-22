@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
   // Fetch Rider App analytics summary
   const riderPromise = riderAppApiUrl
-    ? fetch(`${riderAppApiUrl}/api/analytics/summary`, {
+    ? fetch(`${riderAppApiUrl}/api/analytics/summary?start_date=${start}&end_date=${end}`, {
       signal: AbortSignal.timeout(6000),
       cache: "no-store",
     })
