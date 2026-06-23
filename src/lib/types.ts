@@ -19,6 +19,20 @@ export interface ReviewItem {
   reported: boolean;
 }
 
+export interface PassengerInsightItem {
+  name: string;
+  count: number;
+  extraDetail?: string;
+}
+
+export interface BusinessInsights {
+  dayOfWeekDistribution: Record<string, number>;
+  vipPassengers: PassengerInsightItem[];
+  atRiskPassengers: PassengerInsightItem[];
+  peakHour: string;
+  warnings: string[];
+}
+
 export interface AnalyticsMetrics {
   // From Rider App
   totalReservations: number | null;
@@ -26,6 +40,7 @@ export interface AnalyticsMetrics {
   totalAmountCharged: number | null;
   destinations: Record<string, number> | null;
   reservationsByStatus: Record<string, number> | null;
+  insights: BusinessInsights | null;
 
   // From Feedback App
   averageDriverRating: number | null;

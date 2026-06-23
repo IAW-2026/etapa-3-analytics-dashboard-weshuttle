@@ -62,10 +62,10 @@ const CustomTooltipContent = ({
             {pld.name === "avgDriverRating"
               ? "Calificación Conductor: "
               : pld.name === "avgPassengerRating"
-              ? "Calificación Pasajero: "
-              : pld.name === "reviewCount"
-              ? "Cantidad Reseñas: "
-              : `${pld.name}: `}
+                ? "Calificación Pasajero: "
+                : pld.name === "reviewCount"
+                  ? "Cantidad Reseñas: "
+                  : `${pld.name}: `}
             {pld.value}
           </p>
         ))}
@@ -160,8 +160,11 @@ export default function DashboardPage() {
       const fifteenDaysAgo = new Date();
       fifteenDaysAgo.setDate(today.getDate() - 15);
 
+      const futureEnd = new Date();
+      futureEnd.setDate(today.getDate() + 7);
+
       setStartDate(formatDateString(fifteenDaysAgo));
-      setEndDate(formatDateString(today));
+      setEndDate(formatDateString(futureEnd));
     }, 0);
     return () => clearTimeout(timer);
   }, []);
@@ -205,6 +208,10 @@ export default function DashboardPage() {
     if (type !== "custom") {
       const today = new Date();
       const newStart = new Date();
+
+      const futureEnd = new Date();
+      futureEnd.setDate(today.getDate() + 7);
+
       let label = "";
 
       if (type === "1day") {
@@ -223,14 +230,14 @@ export default function DashboardPage() {
 
       setDateFilterText(label);
       const sStr = formatDateString(newStart);
-      const eStr = formatDateString(today);
+      const eStr = formatDateString(futureEnd);
       setStartDate(sStr);
       setEndDate(eStr);
       fetchData(sStr, eStr);
       showToast(`Filtrado por: ${label}`, "calendar_today");
     } else {
       setDateFilterText("Personalizado");
-      showToast("Seleccione el rango de fechas personalizado", "calendar_today");
+      showToast("Seleccione el rango de fechas personalizado (Próximamente)", "calendar_today");
     }
   };
 
@@ -313,7 +320,7 @@ export default function DashboardPage() {
   const totalReservationsCount = metrics?.totalReservations || 0;
   const activeUsersCount = metrics?.activeUsers || 0;
   const totalAmountChargedVal = metrics?.totalAmountCharged || 0;
-  
+
   let confirmadasCount = 0;
   if (metrics?.reservationsByStatus) {
     confirmadasCount = metrics.reservationsByStatus.CONFIRMED || 0;
@@ -352,7 +359,7 @@ export default function DashboardPage() {
     // Map rating 1..5 onto sentiment
     pctPositive = Math.round(((avg - 1.5) / 3.5) * 100);
     pctPositive = Math.max(0, Math.min(100, pctPositive));
-    
+
     pctNeutral = Math.round((100 - pctPositive) * 0.7);
     pctNegative = 100 - pctPositive - pctNeutral;
   }
@@ -501,27 +508,24 @@ export default function DashboardPage() {
           </button>
           <button
             onClick={() => handleNavClick("Transactions")}
-            className={`nav-item ${
-              activeTab === "Transactions" ? "active" : ""
-            }`}
+            className={`nav-item ${activeTab === "Transactions" ? "active" : ""
+              }`}
           >
             <span className="material-symbols-outlined">payments</span>
             Transactions
           </button>
           <button
             onClick={() => handleNavClick("Ratings")}
-            className={`nav-item ${
-              activeTab === "Ratings" ? "active" : ""
-            }`}
+            className={`nav-item ${activeTab === "Ratings" ? "active" : ""
+              }`}
           >
             <span className="material-symbols-outlined">reviews</span>
             Ratings
           </button>
           <button
             onClick={() => handleNavClick("Settings")}
-            className={`nav-item ${
-              activeTab === "Settings" ? "active" : ""
-            }`}
+            className={`nav-item ${activeTab === "Settings" ? "active" : ""
+              }`}
           >
             <span className="material-symbols-outlined">settings</span>
             Settings
@@ -689,9 +693,8 @@ export default function DashboardPage() {
                         {alertItems.map((item) => (
                           <div
                             key={item.id}
-                            className={`flex gap-2 p-2 rounded text-xs ${
-                              item.type === "coral" ? "bg-rose-950/20 border border-rose-900/30" : "bg-blue-950/20 border border-blue-900/30"
-                            }`}
+                            className={`flex gap-2 p-2 rounded text-xs ${item.type === "coral" ? "bg-rose-950/20 border border-rose-900/30" : "bg-blue-950/20 border border-blue-900/30"
+                              }`}
                           >
                             <span className={`material-symbols-outlined text-[15px] ${item.type === "coral" ? "text-rose-400" : "text-blue-400"}`}>
                               {item.icon}
@@ -727,16 +730,14 @@ export default function DashboardPage() {
 
                 <div className="resilience-badges">
                   <span
-                    className={`resilience-badge ${
-                      meta?.isFeedbackOnline ? "online" : "mocked"
-                    }`}
+                    className={`resilience-badge ${meta?.isFeedbackOnline ? "online" : "mocked"
+                      }`}
                   >
                     Feedback App: {meta?.isFeedbackOnline ? "Online" : "Offline"}
                   </span>
                   <span
-                    className={`resilience-badge ${
-                      meta?.isRiderOnline ? "online" : "mocked"
-                    }`}
+                    className={`resilience-badge ${meta?.isRiderOnline ? "online" : "mocked"
+                      }`}
                   >
                     Rider App: {meta?.isRiderOnline ? "Online" : "Offline"}
                   </span>
@@ -761,7 +762,7 @@ export default function DashboardPage() {
                 ) : (
                   <div className="kpi-value text-white">{metrics?.totalReservations ?? "—"}</div>
                 )}
-                
+
                 {/* Recharts Sparkline */}
                 {metrics?.ratingTrends && metrics.ratingTrends.length > 0 ? (
                   <div className="h-8 w-full mt-2 opacity-60">
@@ -913,9 +914,8 @@ export default function DashboardPage() {
                   <div className="card-actions">
                     <button
                       onClick={() => setChartTab("calificaciones")}
-                      className={`pill ${
-                        chartTab === "calificaciones" ? "active" : ""
-                      }`}
+                      className={`pill ${chartTab === "calificaciones" ? "active" : ""
+                        }`}
                     >
                       Calificaciones
                     </button>
@@ -1096,7 +1096,7 @@ export default function DashboardPage() {
                     <span className="live-dot !bg-emerald-400"></span>Live Network Active
                   </span>
                 </div>
-                
+
                 <div className="dest-list mt-2 mb-4">
                   {loading ? (
                     Array.from({ length: 3 }).map((_, idx) => (
@@ -1235,7 +1235,7 @@ export default function DashboardPage() {
                   <h3 className="card-title">Estado de Pagos</h3>
                   <span className="text-[10px] text-slate-500 font-semibold">Rider App</span>
                 </div>
-                
+
                 <div className="relative flex justify-center items-center h-[160px] w-full">
                   {!loading && hasDonutData ? (
                     <ResponsiveContainer width="100%" height="100%">
@@ -1517,6 +1517,168 @@ export default function DashboardPage() {
                 </table>
               </div>
             </div>
+
+            {/* Business Insights y Patrones de Negocio */}
+            {metrics?.insights && (
+              <>
+                {/* 1. Panel de Advertencias Analíticas */}
+                {metrics.insights.warnings && metrics.insights.warnings.length > 0 && (
+                  <div className="insight-alert-card mt-6">
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-blue-400 mb-3">
+                      <span className="material-symbols-outlined" style={{ fontSize: "1.2rem" }}>lightbulb</span>
+                      Descubrimientos de Negocio (Insights Automáticos)
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      {metrics.insights.warnings.map((warning, idx) => (
+                        <div key={idx} className="insight-alert-item">
+                          <span className="material-symbols-outlined text-blue-400 insight-alert-icon" style={{ fontSize: "1.1rem" }}>
+                            {warning.includes("💡") ? "info" : warning.includes("🔥") ? "local_fire_department" : "warning"}
+                          </span>
+                          <p className="text-xs text-slate-300">{warning.replace("💡 ", "").replace("🔥 ", "").replace("⚠️ ", "")}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Gráfico de Demanda por Día de la Semana */}
+                <div className="card mt-6">
+                  <div className="card-header">
+                    <h3>Distribución de Demanda Semanal</h3>
+                    <p className="text-xs text-slate-400">Total de reservas registradas por día de la semana en este período.</p>
+                  </div>
+                  <div className="h-64 mt-4">
+                    {(() => {
+                      const dayOfWeekData = metrics.insights.dayOfWeekDistribution
+                        ? Object.entries(metrics.insights.dayOfWeekDistribution).map(([day, count]) => ({
+                          name: day,
+                          Reservas: count
+                        }))
+                        : [];
+
+                      const minReservas = Math.min(...dayOfWeekData.map(d => d.Reservas));
+                      const maxReservas = Math.max(...dayOfWeekData.map(d => d.Reservas));
+
+                      return dayOfWeekData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={dayOfWeekData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#2a2f45" />
+                            <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
+                            <YAxis stroke="#94a3b8" fontSize={11} allowDecimals={false} />
+                            <Tooltip content={<CustomTooltipContent />} cursor={{ fill: "rgba(37, 99, 235, 0.05)" }} />
+                            <Bar dataKey="Reservas" radius={[4, 4, 0, 0]}>
+                              {dayOfWeekData.map((entry, index) => {
+                                // Highlight min day in red (if min is low) and max in green
+                                let barColor = "#2563eb";
+                                if (entry.Reservas === minReservas && minReservas < maxReservas) {
+                                  barColor = "#f43f5e"; // Red alert for lowest day
+                                } else if (entry.Reservas === maxReservas && maxReservas > 0) {
+                                  barColor = "#10b981"; // Green for peak day
+                                }
+                                return <Cell key={`cell-${index}`} fill={barColor} />;
+                              })}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-slate-500 text-sm">Sin datos en el período seleccionado.</div>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* 3. Grid de Pasajeros: VIP vs Alto Riesgo */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                  {/* VIP Passengers */}
+                  <div className="card">
+                    <div className="card-header flex items-center justify-between">
+                      <div>
+                        <h3>Clientes VIP</h3>
+                        <p className="text-xs text-slate-400">Riders con mayor volumen de viajes pagados.</p>
+                      </div>
+                      <span className="material-symbols-outlined text-yellow-500" style={{ fontSize: "1.8rem" }}>workspace_premium</span>
+                    </div>
+                    <div className="table-container mt-4">
+                      {metrics.insights.vipPassengers && metrics.insights.vipPassengers.length > 0 ? (
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Pasajero</th>
+                              <th>Viajes Concretados</th>
+                              <th>Monto Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {metrics.insights.vipPassengers.map((passenger, idx) => (
+                              <tr key={idx}>
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    <span className="badge-rank">{idx + 1}</span>
+                                    <span className="font-bold text-slate-200">{passenger.name}</span>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="font-bold text-slate-300">{passenger.count} viajes</span>
+                                </td>
+                                <td>
+                                  <span className="font-bold text-emerald-400">{passenger.extraDetail?.replace("Gasto: ", "")}</span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="p-6 text-center text-slate-500 text-sm">Sin datos de pasajeros VIP en este período.</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* High Risk Passengers */}
+                  <div className="card">
+                    <div className="card-header flex items-center justify-between">
+                      <div>
+                        <h3>Clientes de Alto Riesgo</h3>
+                        <p className="text-xs text-slate-400">Riders con mayor número de cancelaciones voluntarias.</p>
+                      </div>
+                      <span className="material-symbols-outlined text-rose-500" style={{ fontSize: "1.8rem" }}>warning</span>
+                    </div>
+                    <div className="table-container mt-4">
+                      {metrics.insights.atRiskPassengers && metrics.insights.atRiskPassengers.length > 0 ? (
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Pasajero</th>
+                              <th>Cancelaciones</th>
+                              <th>Tasa de Cancelación</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {metrics.insights.atRiskPassengers.map((passenger, idx) => (
+                              <tr key={idx}>
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    <span className="badge-rank-red">{idx + 1}</span>
+                                    <span className="font-bold text-slate-200">{passenger.name}</span>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="font-bold text-slate-300">{passenger.count} cancelaciones</span>
+                                </td>
+                                <td>
+                                  <span className="font-bold text-rose-400">{passenger.extraDetail?.replace("Tasa Cancelación: ", "")}</span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="p-6 text-center text-slate-500 text-sm">Sin pasajeros con cancelaciones en este período.</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 

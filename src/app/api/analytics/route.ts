@@ -25,6 +25,13 @@ interface RiderSummaryMetrics {
     total_amount_charged: number;
     total_credit_applied: number;
   };
+  insights?: {
+    dayOfWeekDistribution: Record<string, number>;
+    vipPassengers: { name: string; count: number; extraDetail?: string }[];
+    atRiskPassengers: { name: string; count: number; extraDetail?: string }[];
+    peakHour: string;
+    warnings: string[];
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -32,13 +39,16 @@ export async function GET(request: NextRequest) {
   const startDate = searchParams.get("start_date");
   const endDate = searchParams.get("end_date");
 
-  // Fallback dates: default to the last 15 days
+  // Fallback dates: default to the last 15 days, going 7 days into the future for upcoming reservations
   const today = new Date();
   const fifteenDaysAgo = new Date();
   fifteenDaysAgo.setDate(today.getDate() - 15);
 
+  const futureEnd = new Date();
+  futureEnd.setDate(today.getDate() + 7);
+
   const start = startDate || fifteenDaysAgo.toISOString().split("T")[0];
-  const end = endDate || today.toISOString().split("T")[0];
+  const end = endDate || futureEnd.toISOString().split("T")[0];
 
   const feedbackAppApiUrl = process.env.FEEDBACK_APP_API_URL;
   const riderAppApiUrl = process.env.RIDER_APP_API_URL;
@@ -124,6 +134,7 @@ export async function GET(request: NextRequest) {
     totalAmountCharged: riderData?.financials?.total_amount_charged ?? null,
     destinations: riderData?.reservations?.by_destination ?? null,
     reservationsByStatus: riderData?.reservations?.by_status ?? null,
+    insights: riderData?.insights ?? null,
 
     // From Feedback App
     averageDriverRating: feedbackData?.averageDriverRating ?? null,
