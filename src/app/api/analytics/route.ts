@@ -8,6 +8,12 @@ interface FeedbackMetrics {
   totalReviews?: number;
   ratingTrends?: RatingTrendPoint[];
   worstReviews?: ReviewItem[];
+  topDriversGood?: any[];
+  topDriversBad?: any[];
+  topRidersGood?: any[];
+  topRidersBad?: any[];
+  dayOfWeekDistribution?: Record<string, number>;
+  businessInsights?: string[];
 }
 
 interface RiderSummaryMetrics {
@@ -143,6 +149,12 @@ export async function GET(request: NextRequest) {
     totalReviews: feedbackData?.totalReviews ?? null,
     ratingTrends: feedbackData?.ratingTrends ?? [],
     worstReviews: feedbackData?.worstReviews ?? [],
+    topDriversGood: feedbackData?.topDriversGood ?? [],
+    topDriversBad: feedbackData?.topDriversBad ?? [],
+    topRidersGood: feedbackData?.topRidersGood ?? [],
+    topRidersBad: feedbackData?.topRidersBad ?? [],
+    feedbackDayOfWeekDistribution: feedbackData?.dayOfWeekDistribution ?? null,
+    feedbackInsights: feedbackData?.businessInsights ?? [],
   };
 
   return NextResponse.json({

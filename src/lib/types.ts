@@ -33,6 +33,22 @@ export interface BusinessInsights {
   warnings: string[];
 }
 
+export interface DriverRankItem {
+  userId: string;
+  name: string;
+  avgRating: number | null;
+  reviewCount: number;
+  comments?: string[];
+}
+
+export interface RiderRankItem {
+  userId: string;
+  name: string;
+  avgRating: number | null;
+  reviewCount: number;
+  comments?: string[];
+}
+
 export interface AnalyticsMetrics {
   // From Rider App
   totalReservations: number | null;
@@ -49,4 +65,12 @@ export interface AnalyticsMetrics {
   totalReviews: number | null;
   ratingTrends: RatingTrendPoint[];
   worstReviews: ReviewItem[];
+  
+  // New Feedback analytics fields
+  topDriversGood: DriverRankItem[];
+  topDriversBad: DriverRankItem[];
+  topRidersGood: RiderRankItem[];
+  topRidersBad: RiderRankItem[];
+  feedbackDayOfWeekDistribution: Record<string, number> | null;
+  feedbackInsights: string[];
 }

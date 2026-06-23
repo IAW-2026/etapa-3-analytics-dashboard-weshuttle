@@ -649,6 +649,19 @@ tr:last-child td {
   color: var(--text-main) !important;
 }
 
+/* Smooth Recharts Transitions (Hardware Accelerated) */
+.recharts-tooltip-wrapper {
+  transition: transform 1.35s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+.recharts-active-dot circle {
+  transition: cx 1.35s cubic-bezier(0.25, 1, 0.5, 1), cy 1.35s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+.recharts-tooltip-cursor {
+  transition: x 1.35s cubic-bezier(0.25, 1, 0.5, 1), y 1.35s cubic-bezier(0.25, 1, 0.5, 1), x1 1.35s cubic-bezier(0.25, 1, 0.5, 1), x2 1.35s cubic-bezier(0.25, 1, 0.5, 1), y1 1.35s cubic-bezier(0.25, 1, 0.5, 1), y2 1.35s cubic-bezier(0.25, 1, 0.5, 1), d 1.35s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
 /* Resilience Banner style matching template visual tokens */
 .resilience-banner {
   background: rgba(245, 158, 11, 0.08);
@@ -996,4 +1009,35 @@ tr:last-child td {
   font-size: 10px;
   font-weight: 800;
 }
+
+/* ==========================================================================
+   Smooth Chart Tooltip & SVG Pointer Transitions
+   ========================================================================== */
+
+/* Smooth sliding & fading for the tooltip box wrapper */
+.recharts-tooltip-wrapper {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  pointer-events: none;
+}
+
+/* Smooth transition for active dot coordinates (cx, cy) and radius pulse (r) */
+.recharts-active-dot {
+  transition: cx 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              cy 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              r 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Smooth transition for the vertical highlight line or bar highlight in SVG */
+.recharts-tooltip-cursor {
+  transition: x 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              y 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              x1 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              x2 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              y1 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              y2 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              width 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+              height 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
 

@@ -37,10 +37,14 @@ const CustomTooltipContent = ({
   active,
   payload,
   label,
+  showDriver = true,
+  showPassenger = true,
 }: {
   active?: boolean;
   payload?: TooltipPayloadItem[];
   label?: string;
+  showDriver?: boolean;
+  showPassenger?: boolean;
 }) => {
   if (active && payload && payload.length) {
     return (
@@ -57,18 +61,30 @@ const CustomTooltipContent = ({
         }}
       >
         <p className="font-bold text-blue-400 mb-1">{label}</p>
-        {payload.map((pld: TooltipPayloadItem) => (
-          <p key={pld.name} style={{ color: pld.stroke || pld.fill }}>
-            {pld.name === "avgDriverRating"
-              ? "Calificación Conductor: "
-              : pld.name === "avgPassengerRating"
-                ? "Calificación Pasajero: "
-                : pld.name === "reviewCount"
-                  ? "Cantidad Reseñas: "
-                  : `${pld.name}: `}
-            {pld.value}
-          </p>
-        ))}
+        {payload.map((pld: TooltipPayloadItem) => {
+          const isDriver = pld.name === "avgDriverRating";
+          const isPassenger = pld.name === "avgPassengerRating";
+          const isDimmed = (isDriver && !showDriver) || (isPassenger && !showPassenger);
+          return (
+            <p
+              key={pld.name}
+              style={{
+                color: pld.stroke || pld.fill,
+                opacity: isDimmed ? 0.35 : 1,
+                textDecoration: isDimmed ? "line-through" : "none",
+              }}
+            >
+              {pld.name === "avgDriverRating"
+                ? "Calificación Conductor: "
+                : pld.name === "avgPassengerRating"
+                  ? "Calificación Pasajero: "
+                  : pld.name === "reviewCount"
+                    ? "Cantidad Reseñas: "
+                    : `${pld.name}: `}
+              {pld.value}
+            </p>
+          );
+        })}
       </div>
     );
   }
@@ -109,6 +125,10 @@ export default function DashboardPage() {
     "calificaciones"
   );
 
+  // Chart series visibility toggles
+  const [showDriverTrend, setShowDriverTrend] = useState(true);
+  const [showPassengerTrend, setShowPassengerTrend] = useState(true);
+
   // Toasts state
   const [toasts, setToasts] = useState<
     { id: number; message: string; icon: string }[]
@@ -144,7 +164,8 @@ export default function DashboardPage() {
     if (
       tabName !== "Dashboard" &&
       tabName !== "Ratings" &&
-      tabName !== "Riders"
+      tabName !== "Riders" &&
+      tabName !== "Drivers"
     ) {
       showToast(`Cargando sección de ${tabName}... (Próximamente)`, "dns");
     }
@@ -928,6 +949,40 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
+                {!loading && metrics && metrics.ratingTrends.length > 0 && chartTab === "calificaciones" && (
+                  <div className="flex items-center gap-3 mb-4 text-xs px-1 select-none">
+                    <span className="text-slate-400 mr-3">Filtrar curvas:</span>
+                    <button
+                      onClick={() => setShowDriverTrend(!showDriverTrend)}
+                      className="flex items-center gap-2 rounded-md border transition-all cursor-pointer"
+                      style={{
+                        borderColor: showDriverTrend ? '#2563eb' : 'rgba(37, 99, 235, 0.15)',
+                        backgroundColor: showDriverTrend ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+                        color: showDriverTrend ? '#60a5fa' : 'var(--text-muted)',
+                        opacity: showDriverTrend ? 1 : 0.45,
+                        padding: '6px 16px',
+                      }}
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#2563eb' }}></span>
+                      Conductores
+                    </button>
+                    <button
+                      onClick={() => setShowPassengerTrend(!showPassengerTrend)}
+                      className="flex items-center gap-2 rounded-md border transition-all cursor-pointer"
+                      style={{
+                        borderColor: showPassengerTrend ? '#8b5cf6' : 'rgba(139, 92, 246, 0.15)',
+                        backgroundColor: showPassengerTrend ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+                        color: showPassengerTrend ? '#a78bfa' : 'var(--text-muted)',
+                        opacity: showPassengerTrend ? 1 : 0.45,
+                        padding: '6px 16px',
+                      }}
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#8b5cf6' }}></span>
+                      Pasajeros
+                    </button>
+                  </div>
+                )}
+
                 <div className="chart-container">
                   {loading ? (
                     <div className="w-full h-full bg-white/5 rounded animate-pulse flex items-center justify-center">
@@ -1013,23 +1068,23 @@ export default function DashboardPage() {
                             domain={[3.5, 5.0]}
                             ticks={[3.5, 4.0, 4.5, 5.0]}
                           />
-                          <Tooltip content={<CustomTooltipContent />} />
+                          <Tooltip content={<CustomTooltipContent showDriver={showDriverTrend} showPassenger={showPassengerTrend} />} isAnimationActive={false} />
                           <Area
                             type="monotone"
                             dataKey="avgDriverRating"
                             name="avgDriverRating"
-                            stroke="#2563eb"
-                            strokeWidth={3}
-                            fillOpacity={1}
+                            stroke={showDriverTrend ? "#2563eb" : "rgba(37, 99, 235, 0.12)"}
+                            strokeWidth={showDriverTrend ? 3 : 1.2}
+                            fillOpacity={showDriverTrend ? 1 : 0.02}
                             fill="url(#colorDriver)"
                           />
                           <Area
                             type="monotone"
                             dataKey="avgPassengerRating"
                             name="avgPassengerRating"
-                            stroke="#8b5cf6"
-                            strokeWidth={3}
-                            fillOpacity={1}
+                            stroke={showPassengerTrend ? "#8b5cf6" : "rgba(139, 92, 246, 0.12)"}
+                            strokeWidth={showPassengerTrend ? 3 : 1.2}
+                            fillOpacity={showPassengerTrend ? 1 : 0.02}
                             fill="url(#colorPassenger)"
                           />
                         </AreaChart>
@@ -1069,7 +1124,7 @@ export default function DashboardPage() {
                             tickLine={false}
                             axisLine={false}
                           />
-                          <Tooltip content={<CustomTooltipContent />} />
+                          <Tooltip content={<CustomTooltipContent />} isAnimationActive={false} />
                           <Bar
                             dataKey="reviewCount"
                             name="reviewCount"
@@ -1254,6 +1309,7 @@ export default function DashboardPage() {
                           ))}
                         </Pie>
                         <Tooltip
+                          isAnimationActive={false}
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                               const data = payload[0].payload;
@@ -1565,7 +1621,7 @@ export default function DashboardPage() {
                             <CartesianGrid strokeDasharray="3 3" stroke="#2a2f45" />
                             <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
                             <YAxis stroke="#94a3b8" fontSize={11} allowDecimals={false} />
-                            <Tooltip content={<CustomTooltipContent />} cursor={{ fill: "rgba(37, 99, 235, 0.05)" }} />
+                            <Tooltip content={<CustomTooltipContent />} cursor={{ fill: "rgba(37, 99, 235, 0.05)" }} isAnimationActive={false} />
                             <Bar dataKey="Reservas" radius={[4, 4, 0, 0]}>
                               {dayOfWeekData.map((entry, index) => {
                                 // Highlight min day in red (if min is low) and max in green
@@ -1685,7 +1741,7 @@ export default function DashboardPage() {
         {/* Ratings View */}
         {activeTab === "Ratings" && (
           <>
-            <header className="dashboard-header">
+            <header className="dashboard-header flex justify-between items-center mb-6">
               <div className="header-title">
                 <h2>Calificaciones y Reseñas</h2>
                 <p>
@@ -1693,7 +1749,69 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
+                {/* Date dropdown filter */}
+                <div className="date-filter-container">
+                  <div
+                    className="date-filter"
+                    id="dateFilterBtn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDropdown(!showDropdown);
+                    }}
+                  >
+                    <span
+                      className="material-symbols-outlined"
+                      style={{ fontSize: "1.1rem" }}
+                    >
+                      calendar_today
+                    </span>
+                    <span id="dateFilterText">{dateFilterText}</span>
+                    <span
+                      className="material-symbols-outlined"
+                      style={{ fontSize: "1.1rem" }}
+                    >
+                      expand_more
+                    </span>
+                  </div>
+                  <div
+                    className={`date-dropdown ${showDropdown ? "show" : ""}`}
+                    id="dateDropdown"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleRangeSelect("1day")}
+                    >
+                      Último día
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleRangeSelect("7days")}
+                    >
+                      Últimos 7 días
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleRangeSelect("15days")}
+                    >
+                      Últimos 15 días
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleRangeSelect("30days")}
+                    >
+                      Últimos 30 días
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleRangeSelect("custom")}
+                    >
+                      Personalizado...
+                    </button>
+                  </div>
+                </div>
+
                 <button
                   onClick={() => setActiveTab("Dashboard")}
                   className="pill flex items-center gap-1"
@@ -1792,6 +1910,26 @@ export default function DashboardPage() {
               </div>
             </section>
 
+            {/* Business Insights de Feedback */}
+            {metrics?.feedbackInsights && metrics.feedbackInsights.length > 0 && (
+              <div className="insight-alert-card mb-6">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-blue-400 mb-3">
+                  <span className="material-symbols-outlined" style={{ fontSize: "1.2rem" }}>lightbulb</span>
+                  Descubrimientos de Negocio (Reputación y Demanda)
+                </h3>
+                <div className="flex flex-col gap-2">
+                  {metrics.feedbackInsights.map((insight, idx) => (
+                    <div key={idx} className="insight-alert-item">
+                      <span className="material-symbols-outlined text-blue-400 insight-alert-icon" style={{ fontSize: "1.1rem" }}>
+                        {insight.includes("💡") ? "info" : insight.includes("🌟") ? "workspace_premium" : "warning"}
+                      </span>
+                      <p className="text-xs text-slate-300">{insight.replace("💡 ", "").replace("🌟 ", "").replace("⚠️ ", "")}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Feedback Charts Grid */}
             <section className="charts-grid mb-6">
               {/* Chart 1: Rating Evolution */}
@@ -1799,6 +1937,41 @@ export default function DashboardPage() {
                 <div className="card-header">
                   <h3 className="card-title">Evolución de Calificaciones</h3>
                 </div>
+
+                {!loading && metrics && metrics.ratingTrends.length > 0 && (
+                  <div className="flex items-center gap-3 mb-4 text-xs px-1 select-none">
+                    <span className="text-slate-400 mr-3">Filtrar curvas:</span>
+                    <button
+                      onClick={() => setShowDriverTrend(!showDriverTrend)}
+                      className="flex items-center gap-2 rounded-md border transition-all cursor-pointer"
+                      style={{
+                        borderColor: showDriverTrend ? '#2563eb' : 'rgba(37, 99, 235, 0.15)',
+                        backgroundColor: showDriverTrend ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+                        color: showDriverTrend ? '#60a5fa' : 'var(--text-muted)',
+                        opacity: showDriverTrend ? 1 : 0.45,
+                        padding: '6px 16px',
+                      }}
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#2563eb' }}></span>
+                      Conductores
+                    </button>
+                    <button
+                      onClick={() => setShowPassengerTrend(!showPassengerTrend)}
+                      className="flex items-center gap-2 rounded-md border transition-all cursor-pointer"
+                      style={{
+                        borderColor: showPassengerTrend ? '#8b5cf6' : 'rgba(139, 92, 246, 0.15)',
+                        backgroundColor: showPassengerTrend ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+                        color: showPassengerTrend ? '#a78bfa' : 'var(--text-muted)',
+                        opacity: showPassengerTrend ? 1 : 0.45,
+                        padding: '6px 16px',
+                      }}
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#8b5cf6' }}></span>
+                      Pasajeros
+                    </button>
+                  </div>
+                )}
+
                 <div className="chart-container">
                   {loading ? (
                     <div className="w-full h-full bg-white/5 rounded animate-pulse flex items-center justify-center">
@@ -1837,23 +2010,23 @@ export default function DashboardPage() {
                           domain={[3.5, 5.0]}
                           ticks={[3.5, 4.0, 4.5, 5.0]}
                         />
-                        <Tooltip content={<CustomTooltipContent />} />
+                        <Tooltip content={<CustomTooltipContent showDriver={showDriverTrend} showPassenger={showPassengerTrend} />} isAnimationActive={false} />
                         <Area
                           type="monotone"
                           dataKey="avgDriverRating"
                           name="avgDriverRating"
-                          stroke="#2563eb"
-                          strokeWidth={3}
-                          fillOpacity={1}
+                          stroke={showDriverTrend ? "#2563eb" : "rgba(37, 99, 235, 0.12)"}
+                          strokeWidth={showDriverTrend ? 3 : 1.2}
+                          fillOpacity={showDriverTrend ? 1 : 0.02}
                           fill="url(#colorDriverTab)"
                         />
                         <Area
                           type="monotone"
                           dataKey="avgPassengerRating"
                           name="avgPassengerRating"
-                          stroke="#8b5cf6"
-                          strokeWidth={3}
-                          fillOpacity={1}
+                          stroke={showPassengerTrend ? "#8b5cf6" : "rgba(139, 92, 246, 0.12)"}
+                          strokeWidth={showPassengerTrend ? 3 : 1.2}
+                          fillOpacity={showPassengerTrend ? 1 : 0.02}
                           fill="url(#colorPassengerTab)"
                         />
                       </AreaChart>
@@ -1892,7 +2065,7 @@ export default function DashboardPage() {
                           }}
                         />
                         <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
-                        <Tooltip content={<CustomTooltipContent />} />
+                        <Tooltip content={<CustomTooltipContent />} isAnimationActive={false} />
                         <Bar
                           dataKey="reviewCount"
                           name="reviewCount"
@@ -1910,11 +2083,404 @@ export default function DashboardPage() {
                 </div>
               </div>
             </section>
+
+            {/* Chart 3: Day of Week Distribution */}
+            <div className="card mb-6">
+              <div className="card-header">
+                <h3>Distribución Semanal de Viajes (Feedback)</h3>
+                <p className="text-xs text-slate-400">Total de viajes calificados por día de la semana. Permite detectar días de baja actividad de pool.</p>
+              </div>
+              <div className="h-64 mt-4">
+                {(() => {
+                  const dayOfWeekData = metrics?.feedbackDayOfWeekDistribution
+                    ? Object.entries(metrics.feedbackDayOfWeekDistribution).map(([day, count]) => ({
+                      name: day,
+                      Viajes: count
+                    }))
+                    : [];
+
+                  const values = dayOfWeekData.map(d => d.Viajes);
+                  const minReviews = values.length > 0 ? Math.min(...values) : 0;
+                  const maxReviews = values.length > 0 ? Math.max(...values) : 0;
+
+                  return dayOfWeekData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={dayOfWeekData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#2a2f45" />
+                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
+                        <YAxis stroke="#94a3b8" fontSize={11} allowDecimals={false} />
+                        <Tooltip content={<CustomTooltipContent />} cursor={{ fill: "rgba(255,255,255,0.02)" }} isAnimationActive={false} />
+                        <Bar dataKey="Viajes" radius={[4, 4, 0, 0]} maxBarSize={35}>
+                          {dayOfWeekData.map((entry, index) => {
+                            let barColor = "#8b5cf6"; // Purple theme
+                            if (entry.Viajes === minReviews && minReviews < maxReviews) {
+                              barColor = "#f43f5e"; // Red alert for lowest day
+                            } else if (entry.Viajes === maxReviews && maxReviews > 0) {
+                              barColor = "#10b981"; // Green peak day
+                            }
+                            return <Cell key={`cell-${index}`} fill={barColor} />;
+                          })}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-slate-500 text-sm">Sin datos en el período seleccionado.</div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Pasajeros (Riders) Rankings */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {/* Top Pasajeros */}
+              <div className="card">
+                <div className="card-header flex items-center justify-between">
+                  <div>
+                    <h3>Pasajeros Estrella</h3>
+                    <p className="text-xs text-slate-400">Mejor calificados por conductores en este período.</p>
+                  </div>
+                  <span className="material-symbols-outlined text-emerald-400" style={{ fontSize: "1.8rem" }}>sentiment_very_satisfied</span>
+                </div>
+                <div className="table-container mt-4">
+                  {metrics?.topRidersGood && metrics.topRidersGood.length > 0 ? (
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Pasajero</th>
+                          <th>Calificación</th>
+                          <th>Total Reseñas</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {metrics.topRidersGood.map((rider, idx) => (
+                          <tr key={rider.userId}>
+                            <td>
+                              <div className="flex items-center gap-2">
+                                <span className="badge-rank">{idx + 1}</span>
+                                <span className="font-bold text-slate-200">{rider.name}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="flex items-center gap-1">
+                                <span className="font-bold text-emerald-400">{rider.avgRating ?? "—"}</span>
+                                <span className="material-symbols-outlined text-emerald-400 text-[12px]">star</span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="text-slate-400 text-xs">{rider.reviewCount} reseñas</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="p-6 text-center text-slate-500 text-sm">Sin datos de pasajeros en este período.</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Bad Pasajeros */}
+              <div className="card">
+                <div className="card-header flex items-center justify-between">
+                  <div>
+                    <h3>Pasajeros en Observación</h3>
+                    <p className="text-xs text-slate-400">Pasajeros con calificaciones más bajas en el periodo.</p>
+                  </div>
+                  <span className="material-symbols-outlined text-rose-500" style={{ fontSize: "1.8rem" }}>report_problem</span>
+                </div>
+                <div className="table-container mt-4">
+                  {metrics?.topRidersBad && metrics.topRidersBad.length > 0 ? (
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Pasajero</th>
+                          <th>Calificación</th>
+                          <th>Comentarios Recientes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {metrics.topRidersBad.map((rider, idx) => (
+                          <tr key={rider.userId}>
+                            <td>
+                              <div className="flex items-center gap-2">
+                                <span className="badge-rank-red">{idx + 1}</span>
+                                <span className="font-bold text-slate-200">{rider.name}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="flex items-center gap-1">
+                                <span className="font-bold text-rose-400">{rider.avgRating ?? "—"}</span>
+                                <span className="material-symbols-outlined text-rose-400 text-[12px]">star</span>
+                              </div>
+                            </td>
+                            <td>
+                              {rider.comments && rider.comments.length > 0 ? (
+                                <div className="text-[10px] text-slate-400 max-w-[250px] line-clamp-2 italic" title={rider.comments.join("\n")}>
+                                  "{rider.comments[0]}"
+                                </div>
+                              ) : (
+                                <span className="text-slate-500 text-xs italic">Sin comentarios</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="p-6 text-center text-slate-500 text-sm">Sin pasajeros críticos en este período.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Worst Reviews Audit Table */}
+            <div className="card">
+              <div className="card-header flex items-center justify-between">
+                <div>
+                  <h3 className="card-title">Auditoría de Comentarios Críticos (≤ 2⭐)</h3>
+                  <p className="text-xs text-slate-400">Últimos comentarios de descontento registrados en el sistema WeShuttle.</p>
+                </div>
+                <span className="status-badge denied">Alerta Crítica</span>
+              </div>
+              <div className="table-container mt-4">
+                {metrics?.worstReviews && metrics.worstReviews.length > 0 ? (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Autor</th>
+                        <th>Destinatario</th>
+                        <th>Rating</th>
+                        <th>Comentario</th>
+                        <th>Estado Moderación</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {metrics.worstReviews.slice(0, 8).map((rev) => (
+                        <tr key={rev.id}>
+                          <td className="text-slate-400 text-xs">{rev.date}</td>
+                          <td>
+                            <span className="font-bold text-slate-200">{rev.author}</span>
+                            <span className="text-[10px] text-slate-500 block">{rev.authorRole}</span>
+                          </td>
+                          <td>
+                            <span className="font-bold text-slate-200">{rev.recipient}</span>
+                            <span className="text-[10px] text-slate-500 block">{rev.recipientRole}</span>
+                          </td>
+                          <td>
+                            <div className="flex items-center gap-1 font-bold text-rose-500">
+                              {rev.rating}⭐
+                            </div>
+                          </td>
+                          <td className="italic text-xs text-slate-300">"{rev.comment}"</td>
+                          <td>
+                            {rev.reported ? (
+                              <span className="status-badge denied flex items-center gap-1 py-0.5">
+                                <span className="material-symbols-outlined text-[10px]">report</span> Reportado
+                              </span>
+                            ) : (
+                              <span className="status-badge pending flex items-center gap-1 py-0.5" style={{ background: "rgba(245, 158, 11, 0.05)" }}>
+                                <span className="material-symbols-outlined text-[10px]">warning</span> Sin Revisar
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="p-6 text-center text-slate-500 text-sm">No se registran valoraciones críticas en este período.</div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Drivers View */}
+        {activeTab === "Drivers" && (
+          <>
+            <header className="dashboard-header flex justify-between items-center mb-6">
+              <div className="header-title">
+                <h2>Conductores (Drivers)</h2>
+                <p>Análisis de reputación y calidad de servicio de los choferes de WeShuttle.</p>
+              </div>
+              <button onClick={() => setActiveTab("Dashboard")} className="pill flex items-center gap-1">
+                <span className="material-symbols-outlined" style={{ fontSize: "1.1rem" }}>arrow_back</span>
+                Dashboard
+              </button>
+            </header>
+
+            {/* Drivers KPIs */}
+            <section className="kpi-grid mb-6">
+              <div className="kpi-card">
+                <div className="kpi-header">
+                  <span className="kpi-title">Reputación Promedio</span>
+                  <div className="kpi-icon blue">
+                    <span className="material-symbols-outlined">directions_car</span>
+                  </div>
+                </div>
+                <div className="kpi-value text-white">
+                  {metrics?.averageDriverRating != null ? `${metrics.averageDriverRating} / 5` : "—"}
+                </div>
+                <div className="rating-stars mt-1 flex">
+                  {metrics?.averageDriverRating != null && renderStars(metrics.averageDriverRating)}
+                </div>
+              </div>
+
+              <div className="kpi-card">
+                <div className="kpi-header">
+                  <span className="kpi-title">Choferes Evaluados</span>
+                  <div className="kpi-icon purple" style={{ color: "#8b5cf6", background: "rgba(139, 92, 246, 0.1)" }}>
+                    <span className="material-symbols-outlined">badge</span>
+                  </div>
+                </div>
+                <div className="kpi-value text-white">
+                  {metrics?.topDriversGood != null ? Array.from(new Set([...metrics.topDriversGood.map(d => d.userId), ...metrics.topDriversBad.map(d => d.userId)])).length : "—"}
+                </div>
+                <div className="text-[10px] text-slate-400 mt-2">Conductores únicos con reseñas</div>
+              </div>
+
+              <div className="kpi-card">
+                <div className="kpi-header">
+                  <span className="kpi-title">Reseñas Registradas</span>
+                  <div className="kpi-icon green">
+                    <span className="material-symbols-outlined">rate_review</span>
+                  </div>
+                </div>
+                <div className="kpi-value text-white">
+                  {metrics?.totalReviews != null ? metrics.totalReviews : "—"}
+                </div>
+                <div className="text-[10px] text-slate-400 mt-2">Volumen de feedback en el período</div>
+              </div>
+            </section>
+
+            {/* Conductores en Alerta - Insights */}
+            {metrics?.feedbackInsights && metrics.feedbackInsights.filter(ins => ins.includes("⚠️ Calidad de Servicio")).length > 0 && (
+              <div className="insight-alert-card mb-6 !border-rose-900/30 !bg-rose-950/10">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-rose-400 mb-3">
+                  <span className="material-symbols-outlined" style={{ fontSize: "1.2rem" }}>warning</span>
+                  Alertas de Calidad de Conductores
+                </h3>
+                <div className="flex flex-col gap-2">
+                  {metrics.feedbackInsights.filter(ins => ins.includes("⚠️ Calidad de Servicio")).map((insight, idx) => (
+                    <div key={idx} className="insight-alert-item">
+                      <span className="material-symbols-outlined text-rose-400 insight-alert-icon" style={{ fontSize: "1.1rem" }}>
+                        warning
+                      </span>
+                      <p className="text-xs text-slate-300">{insight.replace("⚠️ ", "")}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Rankings Grid: Top 5 Buenos vs Top 5 Malos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Top 5 Estrella */}
+              <div className="card">
+                <div className="card-header flex items-center justify-between">
+                  <div>
+                    <h3>Conductores Estrella</h3>
+                    <p className="text-xs text-slate-400">Mejor calificados por pasajeros en este período.</p>
+                  </div>
+                  <span className="material-symbols-outlined text-yellow-500" style={{ fontSize: "1.8rem" }}>workspace_premium</span>
+                </div>
+                <div className="table-container mt-4">
+                  {metrics?.topDriversGood && metrics.topDriversGood.length > 0 ? (
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Conductor</th>
+                          <th>Calificación</th>
+                          <th>Total Reseñas</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {metrics.topDriversGood.map((driver, idx) => (
+                          <tr key={driver.userId}>
+                            <td>
+                              <div className="flex items-center gap-2">
+                                <span className="badge-rank">{idx + 1}</span>
+                                <span className="font-bold text-slate-200">{driver.name}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="flex items-center gap-1">
+                                <span className="font-bold text-yellow-500">{driver.avgRating ?? "—"}</span>
+                                <span className="material-symbols-outlined text-yellow-500 text-[12px]">star</span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="text-slate-400 text-xs">{driver.reviewCount} reseñas</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="p-6 text-center text-slate-500 text-sm">Sin datos de conductores en este período.</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Top 5 Críticos / Alerta */}
+              <div className="card">
+                <div className="card-header flex items-center justify-between">
+                  <div>
+                    <h3>Conductores en Alerta</h3>
+                    <p className="text-xs text-slate-400">Menores promedios de calificación registrados.</p>
+                  </div>
+                  <span className="material-symbols-outlined text-rose-500" style={{ fontSize: "1.8rem" }}>gavel</span>
+                </div>
+                <div className="table-container mt-4">
+                  {metrics?.topDriversBad && metrics.topDriversBad.length > 0 ? (
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Conductor</th>
+                          <th>Calificación</th>
+                          <th>Feedback Crítico Reciente</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {metrics.topDriversBad.map((driver, idx) => (
+                          <tr key={driver.userId}>
+                            <td>
+                              <div className="flex items-center gap-2">
+                                <span className="badge-rank-red">{idx + 1}</span>
+                                <span className="font-bold text-slate-200">{driver.name}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="flex items-center gap-1">
+                                <span className="font-bold text-rose-400">{driver.avgRating ?? "—"}</span>
+                                <span className="material-symbols-outlined text-rose-400 text-[12px]">star</span>
+                              </div>
+                            </td>
+                            <td>
+                              {driver.comments && driver.comments.length > 0 ? (
+                                <div className="text-[10px] text-slate-400 max-w-[250px] line-clamp-2 italic" title={driver.comments.join("\n")}>
+                                  "{driver.comments[0]}"
+                                </div>
+                              ) : (
+                                <span className="text-slate-500 text-xs italic">Sin comentarios</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="p-6 text-center text-slate-500 text-sm">Sin conductores críticos en este período.</div>
+                  )}
+                </div>
+              </div>
+            </div>
           </>
         )}
 
         {/* Placeholder views for other sections */}
-        {activeTab !== "Dashboard" && activeTab !== "Ratings" && activeTab !== "Riders" && (
+        {activeTab !== "Dashboard" && activeTab !== "Ratings" && activeTab !== "Riders" && activeTab !== "Drivers" && (
           <div className="flex flex-col items-center justify-center py-20 card text-center">
             <span className="material-symbols-outlined text-5xl text-blue-500 mb-4 animate-bounce">
               construction
