@@ -58,12 +58,10 @@ export async function GET(request: NextRequest) {
 
   const feedbackAppApiUrl = process.env.FEEDBACK_APP_API_URL;
   const riderAppApiUrl = process.env.RIDER_APP_API_URL;
-
   const headers: Record<string, string> = {};
   if (process.env.ANALYTICS_API_KEY) {
     headers["Authorization"] = `Bearer ${process.env.ANALYTICS_API_KEY}`;
   }
-
   // Fetch Feedback App metrics
   const feedbackPromise = feedbackAppApiUrl
     ? fetch(

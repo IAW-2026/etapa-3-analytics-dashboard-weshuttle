@@ -23,7 +23,40 @@
   /* Next.js theme values override */
   --background: var(--bg-main);
   --foreground: var(--text-main);
+  
+  --bg-sidebar: rgba(17, 19, 27, 0.8);
+  --brand-title-gradient: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+  --bg-dropdown: #0b1528;
 }
+
+.light {
+  --bg-main: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(37, 99, 235, 0.5);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --primary: #1d4ed8;
+  --primary-glow: rgba(37, 99, 235, 0.08);
+  
+  --success: #059669;
+  --success-glow: rgba(5, 150, 105, 0.08);
+  
+  --warning: #d97706;
+  --warning-glow: rgba(217, 119, 6, 0.08);
+  
+  --danger: #e11d48;
+  --danger-glow: rgba(225, 29, 72, 0.08);
+
+  --background: var(--bg-main);
+  --foreground: var(--text-main);
+  
+  --bg-sidebar: rgba(241, 245, 249, 0.9);
+  --brand-title-gradient: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  --bg-dropdown: #ffffff;
+}
+
 
 @theme inline {
   --color-background: var(--background);
@@ -58,7 +91,7 @@ body {
 aside {
   width: 260px;
   border-right: 1px solid var(--border-color);
-  background: rgba(17, 19, 27, 0.8);
+  background: var(--bg-sidebar);
   backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
@@ -91,7 +124,7 @@ aside {
   font-weight: 800;
   font-size: 1.25rem;
   letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+  background: var(--brand-title-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -442,7 +475,7 @@ table {
 }
 
 th {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-muted);
@@ -454,7 +487,7 @@ th {
 td {
   padding: 1rem;
   font-size: 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border-color);
   color: var(--text-main);
 }
 
@@ -512,13 +545,13 @@ tr:last-child td {
 }
 
 .rating-comment {
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   color: var(--text-muted);
   line-height: 1.4;
 }
 
 .rating-user {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-main);
 }
@@ -532,7 +565,7 @@ tr:last-child td {
   position: absolute;
   top: 110%;
   right: 0;
-  background: #0b1528;
+  background: var(--bg-dropdown);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
@@ -819,7 +852,7 @@ tr:last-child td {
 }
 
 .node-label {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
   margin-top: 4px;
@@ -849,7 +882,7 @@ tr:last-child td {
 
 .sentiment-label {
   width: 65px;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -875,7 +908,7 @@ tr:last-child td {
 .sentiment-value {
   width: 40px;
   text-align: right;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-main);
 }
@@ -930,14 +963,14 @@ tr:last-child td {
 .alert-icon.muted { color: var(--text-muted); }
 
 .alert-content h5 {
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--text-main);
   margin-bottom: 2px;
 }
 
 .alert-content p {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   line-height: 1.3;
 }
@@ -1040,4 +1073,43 @@ tr:last-child td {
               height 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
+#notifPopover {
+  background: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
 
+/* Light mode text contrast overrides */
+.light .text-white,
+.light .text-slate-50 {
+  color: var(--text-main) !important;
+}
+
+.light .text-slate-100 {
+  color: #0f172a !important;
+}
+
+.light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+.light .text-slate-400,
+.light .text-slate-500 {
+  color: #475569 !important;
+}
+
+/* Global utility overrides for extra small text classes to make them bigger */
+.text-\[8px\] {
+  font-size: 10px !important;
+}
+
+.text-\[9px\] {
+  font-size: 11px !important;
+}
+
+.text-\[10px\] {
+  font-size: 12px !important;
+}

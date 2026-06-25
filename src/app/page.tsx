@@ -101,6 +101,9 @@ export default function DashboardPage() {
   // Active Navigation Tab
   const [activeTab, setActiveTab] = useState("Dashboard");
 
+  // Theme state: 'dark' | 'light'
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
   // Segment Filter State (All, Rider, Driver)
   const [activeAppFilter, setActiveAppFilter] = useState<"All" | "Rider" | "Driver">("Rider");
 
@@ -165,11 +168,40 @@ export default function DashboardPage() {
       tabName !== "Dashboard" &&
       tabName !== "Ratings" &&
       tabName !== "Riders" &&
-      tabName !== "Drivers"
+      tabName !== "Drivers" &&
+      tabName !== "Settings"
     ) {
       showToast(`Cargando sección de ${tabName}... (Próximamente)`, "dns");
     }
   };
+
+  // Toggle Theme
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("theme", nextTheme);
+    if (nextTheme === "light") {
+      document.documentElement.classList.add("light");
+      showToast("Modo Claro activado", "light_mode");
+    } else {
+      document.documentElement.classList.remove("light");
+      showToast("Modo Oscuro activado", "dark_mode");
+    }
+  };
+
+  // Load and apply theme on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") as "dark" | "light" | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+      if (savedTheme === "light") {
+        document.documentElement.classList.add("light");
+      } else {
+        document.documentElement.classList.remove("light");
+      }
+    }
+  }, []);
+
 
   // Set mounted flag asynchronously to avoid hydration mismatch
   useEffect(() => {
@@ -2479,8 +2511,62 @@ export default function DashboardPage() {
           </>
         )}
 
+        {/* Settings View */}
+        {activeTab === "Settings" && (
+          <>
+            <header className="dashboard-header flex justify-between items-center mb-6">
+              <div className="header-title">
+                <h2>Configuración (Settings)</h2>
+                <p>Personaliza las preferencias visuales y del sistema de WeShuttle.</p>
+              </div>
+              <button onClick={() => setActiveTab("Dashboard")} className="pill flex items-center gap-1">
+                <span className="material-symbols-outlined" style={{ fontSize: "1.1rem" }}>arrow_back</span>
+                Dashboard
+              </button>
+            </header>
+
+            <div className="card max-w-2xl">
+              <div className="card-header pb-2 border-b border-slate-800/30">
+                <h3 className="card-title flex items-center gap-2">
+                  <span className="material-symbols-outlined text-blue-500">palette</span>
+                  Preferencias Visuales
+                </h3>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-6">
+                <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-slate-800/50">
+                  <div>
+                    <h4 className="font-semibold text-slate-200 text-sm">Tema de Interfaz</h4>
+                    <p className="text-xs text-slate-400 mt-1">Cambia entre el modo claro y modo oscuro para la visualización del dashboard.</p>
+                  </div>
+                  
+                  <button 
+                    onClick={toggleTheme}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold border border-slate-700/60 hover:border-blue-500 transition-all select-none cursor-pointer"
+                    style={{
+                      background: "rgba(255,255,255,0.02)",
+                    }}
+                  >
+                    {theme === "dark" ? (
+                      <>
+                        <span className="material-symbols-outlined text-yellow-500 text-[18px]">light_mode</span>
+                        <span>Modo Claro</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-blue-400 text-[18px]">dark_mode</span>
+                        <span>Modo Oscuro</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Placeholder views for other sections */}
-        {activeTab !== "Dashboard" && activeTab !== "Ratings" && activeTab !== "Riders" && activeTab !== "Drivers" && (
+        {activeTab !== "Dashboard" && activeTab !== "Ratings" && activeTab !== "Riders" && activeTab !== "Drivers" && activeTab !== "Settings" && (
           <div className="flex flex-col items-center justify-center py-20 card text-center">
             <span className="material-symbols-outlined text-5xl text-blue-500 mb-4 animate-bounce">
               construction
