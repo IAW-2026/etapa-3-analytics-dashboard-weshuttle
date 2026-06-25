@@ -1,7 +1,7 @@
 # WeShuttle - Analytics Dashboard
 
 ## 1. Link al deploy de producción
-**🔗 https://etapa-3-analytics-dashboard-weshuttle.vercel.app** *(o la URL de producción correspondiente a su despliegue)*
+**🔗 https://etapa-3-analytics-dashboard-weshutt.vercel.app** *(o la URL de producción correspondiente a su despliegue)*
 
 ---
 
