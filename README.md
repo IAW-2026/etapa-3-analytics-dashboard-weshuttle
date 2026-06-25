@@ -31,7 +31,7 @@
 
 ## 4. Descripción de la Aplicación y Detalles Estéticos
 
-El **WeShuttle Analytics Dashboard** es una central inteligente de monitoreo consolidado diseñada para brindar visibilidad en tiempo real a los administradores de la plataforma. La aplicación recopila y unifica datos clave de reputación, demanda y finanzas provenientes directamente de las aplicaciones satélites del ecosistema (*Rider App* y *Feedback App*).
+El **WeShuttle Analytics Dashboard** es una central inteligente de monitoreo consolidado diseñada para brindar visibilidad en tiempo real a los administradores de la plataforma. La aplicación recopila y unifica datos clave de reputación, demanda y finanzas provenientes directamente de las aplicaciones satélites del ecosistema (*Rider App*, *Driver App*, *Payments App* y *Feedback App*).
 
 ### Aspectos Destacados y Detalles Estéticos:
 * **Control de Tema Visual (Light / Dark Mode):** Soporte completo para modo oscuro y modo claro desde la sección de configuración, adaptando los contrastes de textos y gráficos para asegurar la legibilidad del operador.
@@ -42,7 +42,7 @@ El **WeShuttle Analytics Dashboard** es una central inteligente de monitoreo con
 
 ## 5. Captura de Datos y Funcionamiento en Tiempo Real
 
-A diferencia de las demás aplicaciones del ecosistema, esta app no utiliza una base de datos propia. Toda la información se recopila y consolida en tiempo real mediante peticiones directas (API endpoints) a los microservicios externos (Rider App y Feedback App), cruzando datos de reservas, transacciones e historial de feedback.
+A diferencia de las demás aplicaciones del ecosistema, esta app no utiliza una base de datos propia. Toda la información se recopila y consolida en tiempo real mediante peticiones directas (API endpoints) a los microservicios externos (Rider App, Driver App, Payments App y Feedback App), cruzando datos de reservas, transacciones e historial de feedback.
 
 ### Seguridad en la Integración:
 * Todas las llamadas a las APIs externas se protegen mediante el envío de cabeceras de autorización en servidor (`Authorization: Bearer <Key>`), garantizando que la extracción de datos sensibles esté restringida al dashboard autorizado.
