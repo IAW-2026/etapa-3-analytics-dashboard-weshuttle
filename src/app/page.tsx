@@ -2542,7 +2542,7 @@ export default function DashboardPage() {
                   
                   <button 
                     onClick={toggleTheme}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold border border-slate-700/60 hover:border-blue-500 transition-all select-none cursor-pointer"
+                    className="flex items-center justify-center gap-3 px-6 py-2 min-w-[160px] rounded-lg font-bold border border-slate-700/60 hover:border-blue-500 transition-all select-none cursor-pointer"
                     style={{
                       background: "rgba(255,255,255,0.02)",
                     }}
