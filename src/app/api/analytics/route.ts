@@ -59,12 +59,17 @@ export async function GET(request: NextRequest) {
   const feedbackAppApiUrl = process.env.FEEDBACK_APP_API_URL;
   const riderAppApiUrl = process.env.RIDER_APP_API_URL;
 
+  const headers: Record<string, string> = {};
+  if (process.env.ANALYTICS_API_KEY) {
+    headers["Authorization"] = `Bearer ${process.env.ANALYTICS_API_KEY}`;
+  }
 
   // Fetch Feedback App metrics
   const feedbackPromise = feedbackAppApiUrl
     ? fetch(
       `${feedbackAppApiUrl}/api/ratings/analytics/metrics?start_date=${start}&end_date=${end}`,
       {
+        headers,
         signal: AbortSignal.timeout(6000),
         cache: "no-store",
       }
@@ -74,6 +79,7 @@ export async function GET(request: NextRequest) {
   // Fetch Rider App analytics summary
   const riderPromise = riderAppApiUrl
     ? fetch(`${riderAppApiUrl}/api/analytics/summary?start_date=${start}&end_date=${end}`, {
+      headers,
       signal: AbortSignal.timeout(6000),
       cache: "no-store",
     })
