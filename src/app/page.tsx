@@ -168,6 +168,7 @@ export default function DashboardPage() {
     setActiveTab(tabName);
     if (
       tabName !== "Dashboard" &&
+      tabName !== "Transactions" &&
       tabName !== "Ratings" &&
       tabName !== "Riders" &&
       tabName !== "Drivers" &&
@@ -600,6 +601,51 @@ export default function DashboardPage() {
   // Determine service health
   const someOffline = meta && (!meta.isFeedbackOnline || !meta.isRiderOnline || !meta.isDriverOnline || !meta.isPaymentsOnline);
 
+  const DateFilterComponent = () => (
+    <div className="date-filter-container">
+      <div
+        className="date-filter"
+        id="dateFilterBtn"
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowDropdown(!showDropdown);
+        }}
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: "1.1rem" }}>
+          calendar_today
+        </span>
+        <span>{dateFilterText}</span>
+        <span className="material-symbols-outlined" style={{ fontSize: "1.1rem" }}>
+          expand_more
+        </span>
+      </div>
+      <div
+        className={`date-dropdown ${showDropdown ? "show" : ""}`}
+        id="dateDropdown"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button className="dropdown-item" onClick={() => handleRangeSelect("1day")}>
+          Último día
+        </button>
+        <button className="dropdown-item" onClick={() => handleRangeSelect("7days")}>
+          Últimos 7 días
+        </button>
+        <button className="dropdown-item" onClick={() => handleRangeSelect("15days")}>
+          Últimos 15 días
+        </button>
+        <button className="dropdown-item" onClick={() => handleRangeSelect("30days")}>
+          Últimos 30 días
+        </button>
+        <button className="dropdown-item" onClick={() => handleRangeSelect("90days")}>
+          Últimos 3 meses
+        </button>
+        <button className="dropdown-item" onClick={() => handleRangeSelect("all")}>
+          Todos
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="app-container">
       {/* Sidebar */}
@@ -756,72 +802,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Date dropdown filter */}
-                <div className="date-filter-container">
-                  <div
-                    className="date-filter"
-                    id="dateFilterBtn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDropdown(!showDropdown);
-                    }}
-                  >
-                    <span
-                      className="material-symbols-outlined"
-                      style={{ fontSize: "1.1rem" }}
-                    >
-                      calendar_today
-                    </span>
-                    <span id="dateFilterText">{dateFilterText}</span>
-                    <span
-                      className="material-symbols-outlined"
-                      style={{ fontSize: "1.1rem" }}
-                    >
-                      expand_more
-                    </span>
-                  </div>
-                  <div
-                    className={`date-dropdown ${showDropdown ? "show" : ""}`}
-                    id="dateDropdown"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      className="dropdown-item"
-                      onClick={() => handleRangeSelect("1day")}
-                    >
-                      Último día
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => handleRangeSelect("7days")}
-                    >
-                      Últimos 7 días
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => handleRangeSelect("15days")}
-                    >
-                      Últimos 15 días
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => handleRangeSelect("30days")}
-                    >
-                      Últimos 30 días
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => handleRangeSelect("90days")}
-                    >
-                      Últimos 3 meses
-                    </button>
-                    <button
-                      className="dropdown-item"
-                      onClick={() => handleRangeSelect("all")}
-                    >
-                      Todos
-                    </button>
-                  </div>
-                </div>
+                <DateFilterComponent />
 
                 {/* Notifications Popover */}
                 <div className="relative">
@@ -1123,7 +1104,7 @@ export default function DashboardPage() {
                         : "Descubrimientos de Negocio (Insights Automáticos - Driver App)"
                   }
                 </h3>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col justify-evenly h-full gap-2 py-2">
                   {filteredAlertItems.map((item, idx) => (
                     <div key={idx} className="insight-alert-item">
                       <span className={`material-symbols-outlined insight-alert-icon ${
@@ -2321,7 +2302,7 @@ export default function DashboardPage() {
                             </div>
                             {autoInsights.length > 0 ? (
                               <div className="insight-alert-card flex-grow mt-4 !my-0">
-                                <div className="flex flex-col gap-2 max-h-[260px] overflow-y-auto pr-1">
+                                <div className="flex flex-col justify-evenly h-full gap-2 py-2">
                                   {autoInsights.map((insight, idx) => (
                                     <div key={idx} className="insight-alert-item">
                                       <span className={`material-symbols-outlined insight-alert-icon ${
@@ -2769,7 +2750,7 @@ export default function DashboardPage() {
                       <span className="material-symbols-outlined" style={{ fontSize: "1.2rem" }}>lightbulb</span>
                       Descubrimientos de Negocio (Insights Automáticos)
                     </h3>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col justify-evenly h-full gap-2 py-2">
                       {metrics.insights.warnings.map((warning, idx) => (
                         <div key={idx} className="insight-alert-item">
                           <span className="material-symbols-outlined text-blue-400 insight-alert-icon" style={{ fontSize: "1.1rem" }}>
@@ -3114,7 +3095,7 @@ export default function DashboardPage() {
                   <span className="material-symbols-outlined" style={{ fontSize: "1.2rem" }}>lightbulb</span>
                   Descubrimientos de Negocio (Reputación y Demanda)
                 </h3>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col justify-evenly h-full gap-2 py-2">
                   {metrics.feedbackInsights.map((insight, idx) => (
                     <div key={idx} className="insight-alert-item">
                       <span className="material-symbols-outlined text-blue-400 insight-alert-icon" style={{ fontSize: "1.1rem" }}>
@@ -3502,6 +3483,7 @@ export default function DashboardPage() {
                 <p>Auditoría financiera consolidada de WeShuttle a través de Payments App.</p>
               </div>
               <div className="flex items-center gap-4">
+                <DateFilterComponent />
                 <button onClick={() => setActiveTab("Dashboard")} className="pill flex items-center gap-1">
                   <span className="material-symbols-outlined" style={{ fontSize: "1.1rem" }}>arrow_back</span>
                   Dashboard
@@ -3778,7 +3760,7 @@ export default function DashboardPage() {
                         </div>
                         {autoInsights.length > 0 ? (
                           <div className="insight-alert-card flex-grow mt-4 !my-0">
-                            <div className="flex flex-col gap-2 max-h-[260px] overflow-y-auto pr-1">
+                            <div className="flex flex-col justify-evenly h-full gap-2 py-2">
                               {autoInsights.map((insight, idx) => (
                                 <div key={idx} className="insight-alert-item">
                                   <span className={`material-symbols-outlined insight-alert-icon ${
@@ -4169,14 +4151,17 @@ export default function DashboardPage() {
                 <h2>Conductores (Drivers)</h2>
                 <p>Análisis de reputación, rendimiento y riesgo de los choferes de WeShuttle.</p>
               </div>
-              <button onClick={() => setActiveTab("Dashboard")} className="pill flex items-center gap-1">
-                <span className="material-symbols-outlined" style={{ fontSize: "1.1rem" }}>arrow_back</span>
-                Dashboard
-              </button>
+              <div className="flex items-center gap-4">
+                <DateFilterComponent />
+                <button onClick={() => setActiveTab("Dashboard")} className="pill flex items-center gap-1">
+                  <span className="material-symbols-outlined" style={{ fontSize: "1.1rem" }}>arrow_back</span>
+                  Dashboard
+                </button>
+              </div>
             </header>
 
             {/* Drivers KPIs Grid */}
-            <section className="kpi-grid">
+            <section className="kpi-grid-5">
               <div className="kpi-card">
                 <div className="kpi-header">
                   <span className="kpi-title">Choferes Registrados</span>
@@ -4562,7 +4547,7 @@ export default function DashboardPage() {
                   <span className="material-symbols-outlined" style={{ fontSize: "1.2rem" }}>warning</span>
                   Alertas de Calidad de Conductores
                 </h3>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col justify-evenly h-full gap-2 py-2">
                   {metrics.feedbackInsights.filter(ins => ins.includes("⚠️ Calidad de Servicio")).map((insight, idx) => (
                     <div key={idx} className="insight-alert-item">
                       <span className="material-symbols-outlined text-rose-400 insight-alert-icon" style={{ fontSize: "1.1rem" }}>

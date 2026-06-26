@@ -269,6 +269,13 @@ header.dashboard-header {
   margin-bottom: 2rem;
 }
 
+.kpi-grid-5 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
 .kpi-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
