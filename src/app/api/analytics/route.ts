@@ -4,6 +4,7 @@ import { RatingTrendPoint, ReviewItem, PaymentsMetrics } from "@/lib/types";
 interface DriverMetrics {
   totalPools?: number;
   totalPoolsCreated?: number;
+  totalDrivers?: number;
   poolsByStatus?: {
     AVAILABLE?: number;
     ASSIGNED?: number;

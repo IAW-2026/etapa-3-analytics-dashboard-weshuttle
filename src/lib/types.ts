@@ -76,6 +76,7 @@ export interface DriverAtRisk {
 export interface DriverMetrics {
   totalPools?: number;
   totalPoolsCreated?: number;
+  totalDrivers?: number;
   poolsByStatus?: {
     AVAILABLE?: number;
     ASSIGNED?: number;
