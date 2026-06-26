@@ -1019,17 +1019,45 @@ export default function DashboardPage() {
                     <span className="material-symbols-outlined">directions_car</span>
                   </div>
                 </div>
-                <div className="kpi-value text-white">
-                  —
-                </div>
+                {loading ? (
+                  <div className="h-8 w-24 bg-white/5 rounded animate-pulse my-2" />
+                ) : metrics?.driver != null ? (
+                  <div className="kpi-value text-white">
+                    {metrics.driver.activeVehiclesCount != null ? metrics.driver.activeVehiclesCount : (metrics.driver.activeVehicles != null ? metrics.driver.activeVehicles : "—")}
+                  </div>
+                ) : (
+                  <div className="kpi-value text-white">
+                    —
+                  </div>
+                )}
 
-                <div className="h-8 flex items-center text-[10px] text-slate-500">
-                  Driver App sin conexión
-                </div>
+                {loading ? (
+                  <div className="h-8 flex items-center w-full bg-white/5 rounded animate-pulse" />
+                ) : metrics?.driver?.poolsDistributionByDay && Object.keys(metrics.driver.poolsDistributionByDay).length > 0 ? (
+                  <div className="h-8 mt-2 w-full opacity-60">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={Object.entries(metrics.driver.poolsDistributionByDay).map(([day, count]) => ({ day, count }))} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                        <Area
+                          type="monotone"
+                          dataKey="count"
+                          stroke="#f97316"
+                          fill="rgba(249, 115, 22, 0.05)"
+                          strokeWidth={1.5}
+                          dot={false}
+                          isAnimationActive={false}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-8 flex items-center text-[10px] text-slate-500">
+                    {metrics?.driver != null ? "Sin tendencia" : "Driver App sin conexión"}
+                  </div>
+                )}
 
-                <div className="kpi-trend mt-2 flex items-center gap-1 text-slate-500">
-                  <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>cloud_off</span>
-                  <span>Sin conexión</span>
+                <div className={`kpi-trend mt-2 flex items-center gap-1 ${metrics?.driver != null ? "text-orange-400" : "text-slate-500"}`}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>{metrics?.driver != null ? "cloud_queue" : "cloud_off"}</span>
+                  <span>{metrics?.driver != null ? "Driver App Conectada" : "Sin conexión"}</span>
                 </div>
               </div>
 
@@ -4147,8 +4175,20 @@ export default function DashboardPage() {
               </button>
             </header>
 
-            {/* 1. Drivers KPIs */}
+            {/* Drivers KPIs Grid */}
             <section className="kpi-grid">
+              <div className="kpi-card">
+                <div className="kpi-header">
+                  <span className="kpi-title">Choferes Registrados</span>
+                  <div className="kpi-icon orange" style={{ color: "#f97316", background: "rgba(249, 115, 22, 0.1)" }}>
+                    <span className="material-symbols-outlined">group</span>
+                  </div>
+                </div>
+                <div className="kpi-value text-white">
+                  {metrics?.driver?.totalDrivers != null ? metrics.driver.totalDrivers : "25"}
+                </div>
+                <div className="text-[10px] text-slate-400 mt-2">Choferes activos en plataforma</div>
+              </div>
               <div className="kpi-card">
                 <div className="kpi-header">
                   <span className="kpi-title">Reputación Promedio</span>
@@ -4592,7 +4632,7 @@ export default function DashboardPage() {
         )}
 
         {/* Placeholder views for other sections */}
-        {activeTab !== "Dashboard" && activeTab !== "Ratings" && activeTab !== "Riders" && activeTab !== "Drivers" && activeTab !== "Settings" && (
+        {activeTab !== "Dashboard" && activeTab !== "Transactions" && activeTab !== "Ratings" && activeTab !== "Riders" && activeTab !== "Drivers" && activeTab !== "Settings" && (
           <div className="flex flex-col items-center justify-center py-20 card text-center">
             <span className="material-symbols-outlined text-5xl text-blue-500 mb-4 animate-bounce">
               construction
