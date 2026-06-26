@@ -23,6 +23,7 @@ interface AnalyticsMeta {
   endDate: string;
   isFeedbackOnline: boolean;
   isRiderOnline: boolean;
+  isDriverOnline?: boolean;
 }
 
 // Recharts Custom Tooltip
@@ -447,13 +448,15 @@ export default function DashboardPage() {
   }
 
   // Driver App connection indicator
-  alertItems.push({
-    id: "driver-unintegrated",
-    type: "muted",
-    icon: "cloud_off",
-    title: "Driver App no integrada",
-    desc: "La conexión con Driver App no está activa en esta etapa.",
-  });
+  if (meta && !meta.isDriverOnline) {
+    alertItems.push({
+      id: "driver-offline",
+      type: "coral",
+      icon: "error",
+      title: "Driver App offline",
+      desc: "El dashboard no puede obtener los datos de pools, conductores ni de vehículos.",
+    });
+  }
 
   // Payments App connection indicator
   alertItems.push({
@@ -513,7 +516,7 @@ export default function DashboardPage() {
     "Admin User";
 
   // Determine service health
-  const someOffline = meta && (!meta.isFeedbackOnline || !meta.isRiderOnline);
+  const someOffline = meta && (!meta.isFeedbackOnline || !meta.isRiderOnline || !meta.isDriverOnline);
 
   return (
     <div className="app-container">
@@ -654,7 +657,7 @@ export default function DashboardPage() {
                     className={`segment-btn ${activeAppFilter === "Driver" ? "active" : ""}`}
                     onClick={() => {
                       setActiveAppFilter("Driver");
-                      showToast("Filtro: Driver App (Offline)", "commute");
+                      showToast(`Filtro: Driver App ${meta?.isDriverOnline ? "(Online)" : "(Offline)"}`, "commute");
                     }}
                   >
                     Driver App
@@ -811,6 +814,12 @@ export default function DashboardPage() {
                       }`}
                   >
                     Rider App: {meta?.isRiderOnline ? "Online" : "Offline"}
+                  </span>
+                  <span
+                    className={`resilience-badge ${meta?.isDriverOnline ? "online" : "mocked"
+                      }`}
+                  >
+                    Driver App: {meta?.isDriverOnline ? "Online" : "Offline"}
                   </span>
                 </div>
               </div>
@@ -973,7 +982,17 @@ export default function DashboardPage() {
             </section>
 
             {/* Charts Section */}
-            <section className="charts-grid">
+            {(activeAppFilter === "Rider" || activeAppFilter === "All") && (
+              <>
+                {activeAppFilter === "All" && (
+                  <div className="col-span-full mt-4 mb-4">
+                    <h3 className="text-lg font-bold text-slate-300 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-blue-500">directions_run</span>
+                      Métricas Comerciales y de Reputación (Rider/Feedback Apps)
+                    </h3>
+                  </div>
+                )}
+                <section className="charts-grid">
               {/* Recharts Satisfaction & Feedback Area Chart */}
               <div className="card" style={{ minWidth: 0 }}>
                 <div className="card-header">
@@ -1331,11 +1350,13 @@ export default function DashboardPage() {
                 </div>
               </div>
             </section>
+          </>)}
 
             {/* Bottom Row: Payments Donut, Sentiment Index, Alerts */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 mt-6">
+            {(activeAppFilter === "Rider" || activeAppFilter === "All") && (
+              <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 mt-6">
               {/* Payment Donut Chart */}
-              <div className={`card flex flex-col justify-between ${activeAppFilter === "Driver" ? "opacity-30" : ""}`} style={{ minHeight: '300px' }}>
+              <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
                 <div className="card-header pb-1 mb-2">
                   <h3 className="card-title">Estado de Pagos</h3>
                   <span className="text-[10px] text-slate-500 font-semibold">Rider App</span>
@@ -1493,6 +1514,438 @@ export default function DashboardPage() {
                 </div>
               </div>
             </section>
+          )}
+
+          {/* Driver Charts Section */}
+          {(activeAppFilter === "Driver" || activeAppFilter === "All") && (
+            <>
+              {/* Header or subtitle for Driver section when All is selected */}
+              {activeAppFilter === "All" && (
+                <div className="col-span-full mt-8 mb-4 border-t border-slate-800/30 pt-6">
+                  <h3 className="text-lg font-bold text-slate-300 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-blue-500">commute</span>
+                    Métricas Operativas (Driver App)
+                  </h3>
+                </div>
+              )}
+
+              <section className="charts-grid">
+                {/* Curva de Evolución de Viajes */}
+                <div className="card" style={{ minWidth: 0 }}>
+                  <div className="card-header">
+                    <h3 className="card-title">Evolución de Viajes (Pools)</h3>
+                    <span className="text-[10px] text-slate-500 font-semibold">Tendencia Temporal</span>
+                  </div>
+
+                  <div className="chart-container">
+                    {loading ? (
+                      <div className="w-full h-full bg-white/5 rounded animate-pulse flex items-center justify-center">
+                        <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                          Cargando gráfico...
+                        </span>
+                      </div>
+                    ) : metrics?.driver?.travelTrends && metrics.driver.travelTrends.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={metrics.driver.travelTrends}
+                          margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                        >
+                          <defs>
+                            <linearGradient id="colorPools" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                          <XAxis
+                            dataKey="date"
+                            stroke="#475569"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(val) => {
+                              if (!val) return "";
+                              if (val.includes(":")) return val; // 24-bucket format "HH:MM"
+                              const parts = val.split("-");
+                              return parts.length === 3 ? `${parts[2]}/${parts[1]}` : val; // "YYYY-MM-DD" -> "DD/MM"
+                            }}
+                          />
+                          <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
+                          <Tooltip
+                            isAnimationActive={false}
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-[#161925] border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 shadow-xl">
+                                    <p className="font-bold text-blue-400 mb-1">{label}</p>
+                                    <p>Viajes Planificados: <span className="font-bold text-slate-100">{payload[0].value}</span></p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="poolCount"
+                            name="poolCount"
+                            stroke="#3b82f6"
+                            strokeWidth={3}
+                            fillOpacity={1}
+                            fill="url(#colorPools)"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="w-full h-full bg-white/5 rounded flex items-center justify-center text-slate-500">
+                        <span>Sin datos de viajes en este período</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Top 5 Destinos más Solicitados (Driver) */}
+                <div className="card">
+                  <div className="card-header pb-1 mb-2">
+                    <h3 className="card-title">Top Destinos Solicitados</h3>
+                    <span className="live-badge !m-0 !py-0.5 text-[9px] !bg-emerald-950/20 !border-emerald-900/30 !text-emerald-400">
+                      <span className="live-dot !bg-emerald-400"></span>Driver Network Active
+                    </span>
+                  </div>
+
+                  <div className="dest-list mt-2 mb-4">
+                    {loading ? (
+                      Array.from({ length: 3 }).map((_, idx) => (
+                        <div className="dest-item animate-pulse" key={idx}>
+                          <div className="h-3 bg-white/5 w-1/2 rounded mb-1" />
+                          <div className="dest-bar-bg">
+                            <div className="dest-bar-fill one" style={{ width: "0%" }} />
+                          </div>
+                        </div>
+                      ))
+                    ) : metrics?.driver?.topRoutes && metrics.driver.topRoutes.length > 0 ? (
+                      (() => {
+                        const maxCount = Math.max(...metrics.driver.topRoutes.map(r => r.poolCount), 1);
+                        return metrics.driver.topRoutes.slice(0, 5).map((route, idx) => {
+                          const pct = Math.round((route.poolCount / maxCount) * 100);
+                          // Alternate colors for aesthetic hierarchy
+                          const fillClass = idx === 0 ? "one" : idx === 1 ? "two" : "three";
+                          return (
+                            <div className="dest-item" key={idx}>
+                              <div className="dest-info !text-[11px] !gap-1">
+                                <span className="dest-name font-semibold text-slate-300">{route.destination}</span>
+                                <span className="dest-value font-bold text-slate-200">
+                                  {route.poolCount} viajes
+                                </span>
+                              </div>
+                              <div className="dest-bar-bg !h-[5px]">
+                                <div
+                                  className={`dest-bar-fill ${fillClass}`}
+                                  style={{ width: `${pct}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()
+                    ) : (
+                      <div className="text-center text-slate-500 text-xs py-2">
+                        Sin datos de rutas en este período.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              {/* Driver Bottom Row: Pool Status Donut, Weekly Distribution Bar, Business Insights */}
+              <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 mt-6">
+                {/* Pool Status Donut Chart */}
+                <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
+                  <div className="card-header pb-1 mb-2">
+                    <h3 className="card-title">Estado de los Viajes</h3>
+                    <span className="text-[10px] text-slate-500 font-semibold">Driver App</span>
+                  </div>
+
+                  <div className="relative flex justify-center items-center h-[160px] w-full">
+                    {!loading && metrics?.driver?.poolsByStatus ? (
+                      (() => {
+                        const statusColors: Record<string, string> = {
+                          AVAILABLE: "#60a5fa",    // Blue
+                          ASSIGNED: "#3b82f6",     // Dark Blue
+                          LOCKED: "#f59e0b",       // Orange
+                          IN_PROGRESS: "#8b5cf6",  // Purple
+                          COMPLETED: "#10b981",    // Green
+                          CANCELED: "#f43f5e",     // Red
+                        };
+                        const statusTranslations: Record<string, string> = {
+                          AVAILABLE: "Disponible",
+                          ASSIGNED: "Asignado",
+                          LOCKED: "Bloqueado",
+                          IN_PROGRESS: "En Progreso",
+                          COMPLETED: "Completado",
+                          CANCELED: "Cancelado",
+                        };
+                        const poolStatusData = Object.entries(metrics.driver.poolsByStatus)
+                          .filter(([_, value]) => (value || 0) > 0)
+                          .map(([key, value]) => ({
+                            name: statusTranslations[key] || key,
+                            value,
+                            color: statusColors[key] || "#94a3b8",
+                          }));
+                        const totalPoolsSum = poolStatusData.reduce((acc, curr) => acc + curr.value, 0);
+
+                        if (totalPoolsSum === 0) {
+                          return (
+                            <div className="flex flex-col items-center justify-center text-center p-4">
+                              <span className="material-symbols-outlined text-slate-500 text-3xl mb-1">commute</span>
+                              <p className="text-[10px] text-slate-500">Sin pools registrados</p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={poolStatusData}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={45}
+                                  outerRadius={65}
+                                  paddingAngle={3}
+                                  dataKey="value"
+                                >
+                                  {poolStatusData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <Tooltip
+                                  isAnimationActive={false}
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length) {
+                                      const data = payload[0].payload;
+                                      return (
+                                        <div className="bg-[#161925] border border-slate-800 rounded px-2 py-1 text-[10px] text-slate-200">
+                                          {data.name}: <span className="font-bold">{data.value}</span> pools
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  }}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute flex flex-col items-center justify-center">
+                              <span className="text-xl font-bold text-slate-200">
+                                {totalPoolsSum}
+                              </span>
+                              <span className="text-[8px] uppercase tracking-wider text-slate-500">
+                                Viajes
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-center p-4">
+                        <span className="material-symbols-outlined text-slate-500 text-3xl mb-1">commute</span>
+                        <p className="text-[10px] text-slate-500">Driver App sin conexión</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[9px] font-semibold text-slate-400 mt-2 border-t border-slate-800/50 pt-3">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+                      <span>Comp.</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#3b82f6]"></span>
+                      <span>Asig.</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></span>
+                      <span>Bloq.</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]"></span>
+                      <span>Prog.</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#f43f5e]"></span>
+                      <span>Canc.</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Weekday Distribution Bar Chart */}
+                <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
+                  <div className="card-header pb-1 mb-2">
+                    <h3 className="card-title">Distribución por Día</h3>
+                    <span className="text-[10px] text-slate-500 font-semibold">Picos de Demanda</span>
+                  </div>
+
+                  <div className="h-[160px] w-full mt-2">
+                    {!loading && metrics?.driver?.poolsDistributionByDay ? (
+                      (() => {
+                        const weekdayData = Object.entries(metrics.driver.poolsDistributionByDay).map(([day, count]) => ({
+                          name: day,
+                          Pools: count,
+                        }));
+                        const values = weekdayData.map(d => d.Pools);
+                        const minPools = values.length > 0 ? Math.min(...values) : 0;
+                        const maxPools = values.length > 0 ? Math.max(...values) : 0;
+
+                        if (maxPools === 0) {
+                          return (
+                            <div className="flex h-full items-center justify-center text-slate-500 text-xs">
+                              Sin datos registrados
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={weekdayData} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#2a2f45" />
+                              <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} />
+                              <YAxis stroke="#94a3b8" fontSize={9} allowDecimals={false} tickLine={false} />
+                              <Tooltip
+                                isAnimationActive={false}
+                                content={({ active, payload }) => {
+                                  if (active && payload && payload.length) {
+                                    return (
+                                      <div className="bg-[#161925] border border-slate-800 rounded px-2 py-1 text-[10px] text-slate-200">
+                                        {payload[0].payload.name}: <span className="font-bold">{payload[0].value}</span> pools
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              <Bar dataKey="Pools" radius={[3, 3, 0, 0]}>
+                                {weekdayData.map((entry, index) => {
+                                  let barColor = "#3b82f6"; // Default blue
+                                  if (entry.Pools === maxPools && maxPools > 0) {
+                                    barColor = "#10b981"; // Green peak
+                                  } else if (entry.Pools === minPools && minPools < maxPools) {
+                                    barColor = "#f43f5e"; // Red valley
+                                  }
+                                  return <Cell key={`cell-${index}`} fill={barColor} />;
+                                })}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        );
+                      })()
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-slate-500 text-xs">
+                        Driver App sin conexión
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-[9px] text-slate-500 text-center border-t border-slate-800/50 pt-3">
+                    Destaca el día de mayor demanda en verde y de menor en rojo.
+                  </div>
+                </div>
+
+                {/* Smart Business Insights Card */}
+                <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
+                  <div className="card-header pb-1 mb-2">
+                    <h3 className="card-title">Módulo de Business Insights</h3>
+                    <span className="live-badge !m-0 !py-0.5 text-[9px] !bg-blue-950/20 !border-blue-900/30 !text-blue-400">
+                      Inteligente
+                    </span>
+                  </div>
+
+                  <div className="alerts-list flex-grow mt-2 flex flex-col gap-2 max-h-[190px] overflow-y-auto">
+                    {!loading && metrics?.driver ? (
+                      (() => {
+                        const insights = [];
+                        const driver = metrics.driver;
+
+                        // 1. Low utilization warning
+                        if (driver.driverUtilizationRate != null && driver.driverUtilizationRate < 60) {
+                          insights.push({
+                            id: "low-util",
+                            type: "coral",
+                            icon: "warning",
+                            title: "Baja utilización de choferes",
+                            desc: `⚠️ Utilización actual del ${driver.driverUtilizationRate}%. Considerar incentivos para conectar más conductores.`,
+                          });
+                        }
+
+                        // 2. Peak demand day calculation
+                        if (driver.poolsDistributionByDay) {
+                          let maxDay = "";
+                          let maxVal = -1;
+                          Object.entries(driver.poolsDistributionByDay).forEach(([day, val]) => {
+                            if (val > maxVal) {
+                              maxVal = val;
+                              maxDay = day;
+                            }
+                          });
+                          if (maxVal > 0) {
+                            insights.push({
+                              id: "peak-demand",
+                              type: "blue",
+                              icon: "lightbulb",
+                              title: "Pico de Demanda Semanal",
+                              desc: `💡 El día ${maxDay} experimenta la mayor demanda de la semana. Reforzar disponibilidad.`,
+                            });
+                          }
+                        }
+
+                        // 3. Route Estrella
+                        if (driver.topRoutes && driver.topRoutes.length > 0) {
+                          const top = driver.topRoutes[0];
+                          insights.push({
+                            id: "star-route",
+                            type: "blue",
+                            icon: "workspace_premium",
+                            title: "Ruta Estrella",
+                            desc: `🚀 El destino ${top.destination} es el más transitado con ${top.poolCount} viajes.`,
+                          });
+                        }
+
+                        if (insights.length === 0) {
+                          return (
+                            <p className="text-[10px] text-slate-500 text-center py-6 italic">
+                              Sin recomendaciones o alertas para este período.
+                            </p>
+                          );
+                        }
+
+                        return insights.map((insight) => (
+                          <div
+                            key={insight.id}
+                            className={`flex gap-2 p-2 rounded text-[11px] ${insight.type === "coral" ? "bg-rose-950/20 border border-rose-900/30" : "bg-blue-950/20 border border-blue-900/30"}`}
+                          >
+                            <span className={`material-symbols-outlined text-[15px] ${insight.type === "coral" ? "text-rose-400" : "text-blue-400"}`}>
+                              {insight.icon}
+                            </span>
+                            <div>
+                              <h5 className="font-semibold text-slate-200">{insight.title}</h5>
+                              <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">{insight.desc}</p>
+                            </div>
+                          </div>
+                        ));
+                      })()
+                    ) : (
+                      <p className="text-[10px] text-slate-500 text-center py-6 italic">
+                        Métricas de choferes no disponibles.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="text-[9px] text-slate-500 text-center border-t border-slate-800/50 pt-3">
+                    Sugerencias operativas calculadas en tiempo real.
+                  </div>
+                </div>
+              </section>
+            </>)}
           </>
         )}
 

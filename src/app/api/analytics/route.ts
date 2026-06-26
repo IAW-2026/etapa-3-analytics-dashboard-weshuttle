@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { RatingTrendPoint, ReviewItem } from "@/lib/types";
 
+interface DriverMetrics {
+  totalPools?: number;
+  totalPoolsCreated?: number;
+  poolsByStatus?: {
+    AVAILABLE?: number;
+    ASSIGNED?: number;
+    LOCKED?: number;
+    IN_PROGRESS?: number;
+    COMPLETED?: number;
+    CANCELED?: number;
+  };
+  driverUtilizationRate?: number;
+  activeVehicles?: number;
+  activeVehiclesCount?: number;
+  poolsDistributionByDay?: Record<string, number>;
+  travelTrends?: { date: string; poolCount: number }[];
+  topRoutes?: { destination: string; poolCount: number }[];
+}
+
 interface FeedbackMetrics {
   averageDriverRating?: number;
   averagePassengerRating?: number;
@@ -58,7 +77,7 @@ export async function GET(request: NextRequest) {
 
   const feedbackAppApiUrl = process.env.FEEDBACK_APP_API_URL;
   const riderAppApiUrl = process.env.RIDER_APP_API_URL;
-
+  const driverAppApiUrl = process.env.DRIVER_APP_API_URL;
 
   // Fetch Feedback App metrics
   const feedbackPromise = feedbackAppApiUrl
@@ -85,19 +104,33 @@ export async function GET(request: NextRequest) {
     })
     : Promise.reject(new Error("RIDER_APP_API_URL is not configured"));
 
+  // Fetch Driver App analytics metrics
+  const driverPromise = driverAppApiUrl
+    ? fetch(`${driverAppApiUrl}/api/analytics/metrics?start_date=${start}&end_date=${end}`, {
+      signal: AbortSignal.timeout(6000),
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${process.env.ANALYTICS_API_KEY || ""}`,
+      },
+    })
+    : Promise.reject(new Error("DRIVER_APP_API_URL is not configured"));
+
   // Fetch all endpoints concurrently
-  const [feedbackResult, riderResult] = await Promise.allSettled([
+  const [feedbackResult, riderResult, driverResult] = await Promise.allSettled([
     feedbackPromise,
     riderPromise,
+    driverPromise,
   ]);
 
   const responseStatus: Record<string, { status: string; error: string | null }> = {
     feedback: { status: "unknown", error: null },
     rider: { status: "unknown", error: null },
+    driver: { status: "unknown", error: null },
   };
 
   let feedbackData: FeedbackMetrics | null = null;
   let riderData: RiderSummaryMetrics | null = null;
+  let driverData: DriverMetrics | null = null;
 
   // Helper to parse settled fetch results
   const parseResult = async <T>(
@@ -137,6 +170,7 @@ export async function GET(request: NextRequest) {
 
   feedbackData = await parseResult<FeedbackMetrics>(feedbackResult, "feedback");
   riderData = await parseResult<RiderSummaryMetrics>(riderResult, "rider");
+  driverData = await parseResult<DriverMetrics>(driverResult, "driver");
 
   // Build metrics only from real data — no mocks, no fallbacks with invented values
   const metrics = {
@@ -161,6 +195,9 @@ export async function GET(request: NextRequest) {
     topRidersBad: feedbackData?.topRidersBad ?? [],
     feedbackDayOfWeekDistribution: feedbackData?.dayOfWeekDistribution ?? null,
     feedbackInsights: feedbackData?.businessInsights ?? [],
+
+    // From Driver App
+    driver: driverData ?? null,
   };
 
   return NextResponse.json({
@@ -171,6 +208,7 @@ export async function GET(request: NextRequest) {
       endDate: end,
       isFeedbackOnline: responseStatus.feedback.status === "success",
       isRiderOnline: responseStatus.rider.status === "success",
+      isDriverOnline: responseStatus.driver.status === "success",
     },
   });
 }

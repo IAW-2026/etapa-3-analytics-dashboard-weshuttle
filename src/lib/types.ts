@@ -49,6 +49,25 @@ export interface RiderRankItem {
   comments?: string[];
 }
 
+export interface DriverMetrics {
+  totalPools?: number;
+  totalPoolsCreated?: number;
+  poolsByStatus?: {
+    AVAILABLE?: number;
+    ASSIGNED?: number;
+    LOCKED?: number;
+    IN_PROGRESS?: number;
+    COMPLETED?: number;
+    CANCELED?: number;
+  };
+  driverUtilizationRate?: number;
+  activeVehicles?: number;
+  activeVehiclesCount?: number;
+  poolsDistributionByDay?: Record<string, number>;
+  travelTrends?: { date: string; poolCount: number }[];
+  topRoutes?: { destination: string; poolCount: number }[];
+}
+
 export interface AnalyticsMetrics {
   // From Rider App
   totalReservations: number | null;
@@ -73,4 +92,7 @@ export interface AnalyticsMetrics {
   topRidersBad: RiderRankItem[];
   feedbackDayOfWeekDistribution: Record<string, number> | null;
   feedbackInsights: string[];
+
+  // From Driver App
+  driver: DriverMetrics | null;
 }
