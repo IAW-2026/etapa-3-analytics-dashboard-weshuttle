@@ -49,6 +49,30 @@ export interface RiderRankItem {
   comments?: string[];
 }
 
+export interface DriverStats {
+  driverId: string;
+  name: string;
+  email: string | null;
+  completedCount: number;
+  canceledCount: number;
+  totalPoolsCount: number;
+  cancellationRate: number;
+  revenue: number;
+  rating: number;
+  complaints: number;
+  poolsLastMonth: number;
+}
+
+export interface DriverAtRisk {
+  driverId: string;
+  name: string;
+  riskLevel: "HIGH" | "MEDIUM";
+  reasons: string[];
+  rating: number;
+  cancellationRate: number;
+  complaints: number;
+}
+
 export interface DriverMetrics {
   totalPools?: number;
   totalPoolsCreated?: number;
@@ -66,6 +90,11 @@ export interface DriverMetrics {
   poolsDistributionByDay?: Record<string, number>;
   travelTrends?: { date: string; poolCount: number }[];
   topRoutes?: { destination: string; poolCount: number }[];
+  driversData?: {
+    driverStats: DriverStats[];
+    driverOfTheMonth: DriverStats | null;
+    driversAtRisk: DriverAtRisk[];
+  };
 }
 
 export interface AnalyticsMetrics {

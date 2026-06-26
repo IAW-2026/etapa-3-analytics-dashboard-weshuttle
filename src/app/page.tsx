@@ -993,277 +993,277 @@ export default function DashboardPage() {
                   </div>
                 )}
                 <section className="charts-grid">
-              {/* Recharts Satisfaction & Feedback Area Chart */}
-              <div className="card" style={{ minWidth: 0 }}>
-                <div className="card-header">
-                  <h3 className="card-title">
-                    {chartTab === "calificaciones"
-                      ? "Evolución de Calificaciones (Satisfacción)"
-                      : "Volumen de Feedback y Reseñas"}
-                  </h3>
-                  <div className="card-actions">
-                    <button
-                      onClick={() => setChartTab("calificaciones")}
-                      className={`pill ${chartTab === "calificaciones" ? "active" : ""
-                        }`}
-                    >
-                      Calificaciones
-                    </button>
-                    <button
-                      onClick={() => setChartTab("volume")}
-                      className={`pill ${chartTab === "volume" ? "active" : ""}`}
-                    >
-                      Volumen
-                    </button>
-                  </div>
-                </div>
-
-                {!loading && metrics && metrics.ratingTrends.length > 0 && chartTab === "calificaciones" && (
-                  <div className="flex items-center gap-3 mb-4 text-xs px-1 select-none">
-                    <span className="text-slate-400 mr-3">Filtrar curvas:</span>
-                    <button
-                      onClick={() => setShowDriverTrend(!showDriverTrend)}
-                      className="flex items-center gap-2 rounded-md border transition-all cursor-pointer"
-                      style={{
-                        borderColor: showDriverTrend ? '#2563eb' : 'rgba(37, 99, 235, 0.15)',
-                        backgroundColor: showDriverTrend ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
-                        color: showDriverTrend ? '#60a5fa' : 'var(--text-muted)',
-                        opacity: showDriverTrend ? 1 : 0.45,
-                        padding: '6px 16px',
-                      }}
-                    >
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#2563eb' }}></span>
-                      Conductores
-                    </button>
-                    <button
-                      onClick={() => setShowPassengerTrend(!showPassengerTrend)}
-                      className="flex items-center gap-2 rounded-md border transition-all cursor-pointer"
-                      style={{
-                        borderColor: showPassengerTrend ? '#8b5cf6' : 'rgba(139, 92, 246, 0.15)',
-                        backgroundColor: showPassengerTrend ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
-                        color: showPassengerTrend ? '#a78bfa' : 'var(--text-muted)',
-                        opacity: showPassengerTrend ? 1 : 0.45,
-                        padding: '6px 16px',
-                      }}
-                    >
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#8b5cf6' }}></span>
-                      Pasajeros
-                    </button>
-                  </div>
-                )}
-
-                <div className="chart-container">
-                  {loading ? (
-                    <div className="w-full h-full bg-white/5 rounded animate-pulse flex items-center justify-center">
-                      <span
-                        style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}
-                      >
-                        Cargando gráfico...
-                      </span>
-                    </div>
-                  ) : metrics && metrics.ratingTrends.length > 0 ? (
-                    chartTab === "calificaciones" ? (
-                      <ResponsiveContainer
-                        key={`${startDate}_${endDate}`}
-                        width="100%"
-                        height="100%"
-                        minWidth={0}
-                        minHeight={0}
-                      >
-                        <AreaChart
-                          data={metrics.ratingTrends}
-                          margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                  {/* Recharts Satisfaction & Feedback Area Chart */}
+                  <div className="card" style={{ minWidth: 0 }}>
+                    <div className="card-header">
+                      <h3 className="card-title">
+                        {chartTab === "calificaciones"
+                          ? "Evolución de Calificaciones (Satisfacción)"
+                          : "Volumen de Feedback y Reseñas"}
+                      </h3>
+                      <div className="card-actions">
+                        <button
+                          onClick={() => setChartTab("calificaciones")}
+                          className={`pill ${chartTab === "calificaciones" ? "active" : ""
+                            }`}
                         >
-                          <defs>
-                            <linearGradient
-                              id="colorDriver"
-                              x1="0"
-                              y1="0"
-                              x2="0"
-                              y2="1"
-                            >
-                              <stop
-                                offset="5%"
-                                stopColor="#2563eb"
-                                stopOpacity={0.2}
-                              />
-                              <stop
-                                offset="95%"
-                                stopColor="#2563eb"
-                                stopOpacity={0}
-                              />
-                            </linearGradient>
-                            <linearGradient
-                              id="colorPassenger"
-                              x1="0"
-                              y1="0"
-                              x2="0"
-                              y2="1"
-                            >
-                              <stop
-                                offset="5%"
-                                stopColor="#8b5cf6"
-                                stopOpacity={0.2}
-                              />
-                              <stop
-                                offset="95%"
-                                stopColor="#8b5cf6"
-                                stopOpacity={0}
-                              />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="rgba(255,255,255,0.03)"
-                          />
-                          <XAxis
-                            dataKey="date"
-                            stroke="#475569"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={(val) => {
-                              const parts = val.split("-");
-                              return parts.length === 3
-                                ? `${parts[2]}/${parts[1]}`
-                                : val;
-                            }}
-                          />
-                          <YAxis
-                            stroke="#475569"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                            domain={[3.5, 5.0]}
-                            ticks={[3.5, 4.0, 4.5, 5.0]}
-                          />
-                          <Tooltip content={<CustomTooltipContent showDriver={showDriverTrend} showPassenger={showPassengerTrend} />} isAnimationActive={false} />
-                          <Area
-                            type="monotone"
-                            dataKey="avgDriverRating"
-                            name="avgDriverRating"
-                            stroke={showDriverTrend ? "#2563eb" : "rgba(37, 99, 235, 0.12)"}
-                            strokeWidth={showDriverTrend ? 3 : 1.2}
-                            fillOpacity={showDriverTrend ? 1 : 0.02}
-                            fill="url(#colorDriver)"
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="avgPassengerRating"
-                            name="avgPassengerRating"
-                            stroke={showPassengerTrend ? "#8b5cf6" : "rgba(139, 92, 246, 0.12)"}
-                            strokeWidth={showPassengerTrend ? 3 : 1.2}
-                            fillOpacity={showPassengerTrend ? 1 : 0.02}
-                            fill="url(#colorPassenger)"
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <ResponsiveContainer
-                        key={`${startDate}_${endDate}`}
-                        width="100%"
-                        height="100%"
-                        minWidth={0}
-                        minHeight={0}
-                      >
-                        <BarChart
-                          data={metrics.ratingTrends}
-                          margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                          Calificaciones
+                        </button>
+                        <button
+                          onClick={() => setChartTab("volume")}
+                          className={`pill ${chartTab === "volume" ? "active" : ""}`}
                         >
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="rgba(255,255,255,0.03)"
-                          />
-                          <XAxis
-                            dataKey="date"
-                            stroke="#475569"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={(val) => {
-                              const parts = val.split("-");
-                              return parts.length === 3
-                                ? `${parts[2]}/${parts[1]}`
-                                : val;
-                            }}
-                          />
-                          <YAxis
-                            stroke="#475569"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                          />
-                          <Tooltip content={<CustomTooltipContent />} isAnimationActive={false} />
-                          <Bar
-                            dataKey="reviewCount"
-                            name="reviewCount"
-                            fill="#8b5cf6"
-                            radius={[4, 4, 0, 0]}
-                            maxBarSize={20}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    )
-                  ) : (
-                    <div className="w-full h-full bg-white/5 rounded flex items-center justify-center text-slate-500">
-                      <span>Sin datos de la Feedback App en este rango</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Destinations Card + Interactive SVG Mini-Map */}
-              <div className="live-map-card card">
-                <div className="card-header pb-1 mb-2">
-                  <h3 className="card-title">Destinos más Demandados</h3>
-                  <span className="live-badge !m-0 !py-0.5 text-[9px] !bg-emerald-950/20 !border-emerald-900/30 !text-emerald-400">
-                    <span className="live-dot !bg-emerald-400"></span>Live Network Active
-                  </span>
-                </div>
-
-                <div className="dest-list mt-2 mb-4">
-                  {loading ? (
-                    Array.from({ length: 3 }).map((_, idx) => (
-                      <div className="dest-item animate-pulse" key={idx}>
-                        <div className="h-3 bg-white/5 w-1/2 rounded mb-1" />
-                        <div className="dest-bar-bg">
-                          <div className="dest-bar-fill one" style={{ width: "0%" }} />
-                        </div>
+                          Volumen
+                        </button>
                       </div>
-                    ))
-                  ) : hasDestinations ? (
-                    destinations.map((dest, idx) => (
-                      <div className="dest-item" key={idx}>
-                        <div className="dest-info !text-[11px] !gap-1">
-                          <span className="dest-name font-semibold text-slate-300">{dest.name}</span>
-                          <span className="dest-value font-bold text-slate-200">
-                            {dest.count} viajes ({dest.pct}%)
+                    </div>
+
+                    {!loading && metrics && metrics.ratingTrends.length > 0 && chartTab === "calificaciones" && (
+                      <div className="flex items-center gap-3 mb-4 text-xs px-1 select-none">
+                        <span className="text-slate-400 mr-3">Filtrar curvas:</span>
+                        <button
+                          onClick={() => setShowDriverTrend(!showDriverTrend)}
+                          className="flex items-center gap-2 rounded-md border transition-all cursor-pointer"
+                          style={{
+                            borderColor: showDriverTrend ? '#2563eb' : 'rgba(37, 99, 235, 0.15)',
+                            backgroundColor: showDriverTrend ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+                            color: showDriverTrend ? '#60a5fa' : 'var(--text-muted)',
+                            opacity: showDriverTrend ? 1 : 0.45,
+                            padding: '6px 16px',
+                          }}
+                        >
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#2563eb' }}></span>
+                          Conductores
+                        </button>
+                        <button
+                          onClick={() => setShowPassengerTrend(!showPassengerTrend)}
+                          className="flex items-center gap-2 rounded-md border transition-all cursor-pointer"
+                          style={{
+                            borderColor: showPassengerTrend ? '#8b5cf6' : 'rgba(139, 92, 246, 0.15)',
+                            backgroundColor: showPassengerTrend ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+                            color: showPassengerTrend ? '#a78bfa' : 'var(--text-muted)',
+                            opacity: showPassengerTrend ? 1 : 0.45,
+                            padding: '6px 16px',
+                          }}
+                        >
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#8b5cf6' }}></span>
+                          Pasajeros
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="chart-container">
+                      {loading ? (
+                        <div className="w-full h-full bg-white/5 rounded animate-pulse flex items-center justify-center">
+                          <span
+                            style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}
+                          >
+                            Cargando gráfico...
                           </span>
                         </div>
-                        <div className="dest-bar-bg !h-[5px]">
-                          <div
-                            className={`dest-bar-fill ${dest.fillClass}`}
-                            style={{ width: `${dest.pct}%` }}
-                          ></div>
+                      ) : metrics && metrics.ratingTrends.length > 0 ? (
+                        chartTab === "calificaciones" ? (
+                          <ResponsiveContainer
+                            key={`${startDate}_${endDate}`}
+                            width="100%"
+                            height="100%"
+                            minWidth={0}
+                            minHeight={0}
+                          >
+                            <AreaChart
+                              data={metrics.ratingTrends}
+                              margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                            >
+                              <defs>
+                                <linearGradient
+                                  id="colorDriver"
+                                  x1="0"
+                                  y1="0"
+                                  x2="0"
+                                  y2="1"
+                                >
+                                  <stop
+                                    offset="5%"
+                                    stopColor="#2563eb"
+                                    stopOpacity={0.2}
+                                  />
+                                  <stop
+                                    offset="95%"
+                                    stopColor="#2563eb"
+                                    stopOpacity={0}
+                                  />
+                                </linearGradient>
+                                <linearGradient
+                                  id="colorPassenger"
+                                  x1="0"
+                                  y1="0"
+                                  x2="0"
+                                  y2="1"
+                                >
+                                  <stop
+                                    offset="5%"
+                                    stopColor="#8b5cf6"
+                                    stopOpacity={0.2}
+                                  />
+                                  <stop
+                                    offset="95%"
+                                    stopColor="#8b5cf6"
+                                    stopOpacity={0}
+                                  />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="rgba(255,255,255,0.03)"
+                              />
+                              <XAxis
+                                dataKey="date"
+                                stroke="#475569"
+                                fontSize={10}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={(val) => {
+                                  const parts = val.split("-");
+                                  return parts.length === 3
+                                    ? `${parts[2]}/${parts[1]}`
+                                    : val;
+                                }}
+                              />
+                              <YAxis
+                                stroke="#475569"
+                                fontSize={10}
+                                tickLine={false}
+                                axisLine={false}
+                                domain={[3.5, 5.0]}
+                                ticks={[3.5, 4.0, 4.5, 5.0]}
+                              />
+                              <Tooltip content={<CustomTooltipContent showDriver={showDriverTrend} showPassenger={showPassengerTrend} />} isAnimationActive={false} />
+                              <Area
+                                type="monotone"
+                                dataKey="avgDriverRating"
+                                name="avgDriverRating"
+                                stroke={showDriverTrend ? "#2563eb" : "rgba(37, 99, 235, 0.12)"}
+                                strokeWidth={showDriverTrend ? 3 : 1.2}
+                                fillOpacity={showDriverTrend ? 1 : 0.02}
+                                fill="url(#colorDriver)"
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="avgPassengerRating"
+                                name="avgPassengerRating"
+                                stroke={showPassengerTrend ? "#8b5cf6" : "rgba(139, 92, 246, 0.12)"}
+                                strokeWidth={showPassengerTrend ? 3 : 1.2}
+                                fillOpacity={showPassengerTrend ? 1 : 0.02}
+                                fill="url(#colorPassenger)"
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <ResponsiveContainer
+                            key={`${startDate}_${endDate}`}
+                            width="100%"
+                            height="100%"
+                            minWidth={0}
+                            minHeight={0}
+                          >
+                            <BarChart
+                              data={metrics.ratingTrends}
+                              margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                            >
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="rgba(255,255,255,0.03)"
+                              />
+                              <XAxis
+                                dataKey="date"
+                                stroke="#475569"
+                                fontSize={10}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={(val) => {
+                                  const parts = val.split("-");
+                                  return parts.length === 3
+                                    ? `${parts[2]}/${parts[1]}`
+                                    : val;
+                                }}
+                              />
+                              <YAxis
+                                stroke="#475569"
+                                fontSize={10}
+                                tickLine={false}
+                                axisLine={false}
+                              />
+                              <Tooltip content={<CustomTooltipContent />} isAnimationActive={false} />
+                              <Bar
+                                dataKey="reviewCount"
+                                name="reviewCount"
+                                fill="#8b5cf6"
+                                radius={[4, 4, 0, 0]}
+                                maxBarSize={20}
+                              />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        )
+                      ) : (
+                        <div className="w-full h-full bg-white/5 rounded flex items-center justify-center text-slate-500">
+                          <span>Sin datos de la Feedback App en este rango</span>
                         </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-slate-500 text-xs py-2">
-                      Sin datos de destinos disponibles.
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                {/* Mini-map SVG representation */}
-                <div className="live-map-container mt-1">
-                  <svg
-                    viewBox="0 0 300 200"
-                    className="w-full h-full"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    {/* SVG styling for animation */}
-                    <style>{`
+                  {/* Destinations Card + Interactive SVG Mini-Map */}
+                  <div className="live-map-card card">
+                    <div className="card-header pb-1 mb-2">
+                      <h3 className="card-title">Destinos más Demandados</h3>
+                      <span className="live-badge !m-0 !py-0.5 text-[9px] !bg-emerald-950/20 !border-emerald-900/30 !text-emerald-400">
+                        <span className="live-dot !bg-emerald-400"></span>Live Network Active
+                      </span>
+                    </div>
+
+                    <div className="dest-list mt-2 mb-4">
+                      {loading ? (
+                        Array.from({ length: 3 }).map((_, idx) => (
+                          <div className="dest-item animate-pulse" key={idx}>
+                            <div className="h-3 bg-white/5 w-1/2 rounded mb-1" />
+                            <div className="dest-bar-bg">
+                              <div className="dest-bar-fill one" style={{ width: "0%" }} />
+                            </div>
+                          </div>
+                        ))
+                      ) : hasDestinations ? (
+                        destinations.map((dest, idx) => (
+                          <div className="dest-item" key={idx}>
+                            <div className="dest-info !text-[11px] !gap-1">
+                              <span className="dest-name font-semibold text-slate-300">{dest.name}</span>
+                              <span className="dest-value font-bold text-slate-200">
+                                {dest.count} viajes ({dest.pct}%)
+                              </span>
+                            </div>
+                            <div className="dest-bar-bg !h-[5px]">
+                              <div
+                                className={`dest-bar-fill ${dest.fillClass}`}
+                                style={{ width: `${dest.pct}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center text-slate-500 text-xs py-2">
+                          Sin datos de destinos disponibles.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Mini-map SVG representation */}
+                    <div className="live-map-container mt-1">
+                      <svg
+                        viewBox="0 0 300 200"
+                        className="w-full h-full"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        {/* SVG styling for animation */}
+                        <style>{`
                       @keyframes dash {
                         to {
                           stroke-dashoffset: -20;
@@ -1275,677 +1275,677 @@ export default function DashboardPage() {
                       }
                     `}</style>
 
-                    {/* Background grid dots */}
-                    <defs>
-                      <pattern id="dotPattern" width="15" height="15" patternUnits="userSpaceOnUse">
-                        <circle cx="2" cy="2" r="0.75" fill="rgba(255, 255, 255, 0.08)" />
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#dotPattern)" rx="4" />
+                        {/* Background grid dots */}
+                        <defs>
+                          <pattern id="dotPattern" width="15" height="15" patternUnits="userSpaceOnUse">
+                            <circle cx="2" cy="2" r="0.75" fill="rgba(255, 255, 255, 0.08)" />
+                          </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#dotPattern)" rx="4" />
 
-                    {/* Connector lines (traffic simulation) */}
-                    <path
-                      d="M 60 70 Q 110 110 150 140"
-                      fill="none"
-                      stroke="rgba(37, 99, 235, 0.25)"
-                      strokeWidth="1.5"
-                    />
-                    <path
-                      d="M 60 70 Q 110 110 150 140"
-                      fill="none"
-                      stroke="#2563eb"
-                      strokeWidth="1.5"
-                      className="animate-dash-line"
-                    />
+                        {/* Connector lines (traffic simulation) */}
+                        <path
+                          d="M 60 70 Q 110 110 150 140"
+                          fill="none"
+                          stroke="rgba(37, 99, 235, 0.25)"
+                          strokeWidth="1.5"
+                        />
+                        <path
+                          d="M 60 70 Q 110 110 150 140"
+                          fill="none"
+                          stroke="#2563eb"
+                          strokeWidth="1.5"
+                          className="animate-dash-line"
+                        />
 
-                    <path
-                      d="M 230 65 Q 190 100 150 140"
-                      fill="none"
-                      stroke="rgba(16, 185, 129, 0.25)"
-                      strokeWidth="1.5"
-                    />
-                    <path
-                      d="M 230 65 Q 190 100 150 140"
-                      fill="none"
-                      stroke="#10b981"
-                      strokeWidth="1.5"
-                      className="animate-dash-line"
-                    />
+                        <path
+                          d="M 230 65 Q 190 100 150 140"
+                          fill="none"
+                          stroke="rgba(16, 185, 129, 0.25)"
+                          strokeWidth="1.5"
+                        />
+                        <path
+                          d="M 230 65 Q 190 100 150 140"
+                          fill="none"
+                          stroke="#10b981"
+                          strokeWidth="1.5"
+                          className="animate-dash-line"
+                        />
 
-                    <path
-                      d="M 60 70 Q 145 40 230 65"
-                      fill="none"
-                      stroke="rgba(245, 158, 11, 0.15)"
-                      strokeWidth="1.5"
-                      strokeDasharray="4,4"
-                    />
+                        <path
+                          d="M 60 70 Q 145 40 230 65"
+                          fill="none"
+                          stroke="rgba(245, 158, 11, 0.15)"
+                          strokeWidth="1.5"
+                          strokeDasharray="4,4"
+                        />
 
-                    {/* Nodes (Pulsing size based on demand) */}
-                    {/* Node 1: Polo Petroquímico */}
-                    <g className="cursor-pointer">
-                      <circle cx="60" cy="70" r={Math.min(15, 6 + poloCount / 6)} fill="rgba(37, 99, 235, 0.15)" />
-                      <circle cx="60" cy="70" r="5" fill="#2563eb" />
-                      <circle cx="60" cy="70" r="8" fill="none" stroke="#2563eb" strokeWidth="1" className="animate-ping" style={{ animationDuration: '3s' }} />
-                    </g>
+                        {/* Nodes (Pulsing size based on demand) */}
+                        {/* Node 1: Polo Petroquímico */}
+                        <g className="cursor-pointer">
+                          <circle cx="60" cy="70" r={Math.min(15, 6 + poloCount / 6)} fill="rgba(37, 99, 235, 0.15)" />
+                          <circle cx="60" cy="70" r="5" fill="#2563eb" />
+                          <circle cx="60" cy="70" r="8" fill="none" stroke="#2563eb" strokeWidth="1" className="animate-ping" style={{ animationDuration: '3s' }} />
+                        </g>
 
-                    {/* Node 2: Parque Industrial */}
-                    <g className="cursor-pointer">
-                      <circle cx="230" cy="65" r={Math.min(15, 6 + parqueCount / 6)} fill="rgba(16, 185, 129, 0.15)" />
-                      <circle cx="230" cy="65" r="5" fill="#10b981" />
-                      <circle cx="230" cy="65" r="8" fill="none" stroke="#10b981" strokeWidth="1" className="animate-ping" style={{ animationDuration: '2.5s' }} />
-                    </g>
+                        {/* Node 2: Parque Industrial */}
+                        <g className="cursor-pointer">
+                          <circle cx="230" cy="65" r={Math.min(15, 6 + parqueCount / 6)} fill="rgba(16, 185, 129, 0.15)" />
+                          <circle cx="230" cy="65" r="5" fill="#10b981" />
+                          <circle cx="230" cy="65" r="8" fill="none" stroke="#10b981" strokeWidth="1" className="animate-ping" style={{ animationDuration: '2.5s' }} />
+                        </g>
 
-                    {/* Node 3: Puerto White */}
-                    <g className="cursor-pointer">
-                      <circle cx="150" cy="140" r={Math.min(15, 6 + puertoCount / 6)} fill="rgba(245, 158, 11, 0.15)" />
-                      <circle cx="150" cy="140" r="5" fill="#f59e0b" />
-                      <circle cx="150" cy="140" r="8" fill="none" stroke="#f59e0b" strokeWidth="1" className="animate-ping" style={{ animationDuration: '4s' }} />
-                    </g>
+                        {/* Node 3: Puerto White */}
+                        <g className="cursor-pointer">
+                          <circle cx="150" cy="140" r={Math.min(15, 6 + puertoCount / 6)} fill="rgba(245, 158, 11, 0.15)" />
+                          <circle cx="150" cy="140" r="5" fill="#f59e0b" />
+                          <circle cx="150" cy="140" r="8" fill="none" stroke="#f59e0b" strokeWidth="1" className="animate-ping" style={{ animationDuration: '4s' }} />
+                        </g>
 
-                    {/* Node Labels */}
-                    <text x="60" y="50" fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="middle">Polo</text>
-                    <text x="230" y="48" fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="middle">Parque Ind.</text>
-                    <text x="150" y="162" fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="middle">Puerto White</text>
-                  </svg>
-                </div>
-              </div>
-            </section>
-          </>)}
+                        {/* Node Labels */}
+                        <text x="60" y="50" fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="middle">Polo</text>
+                        <text x="230" y="48" fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="middle">Parque Ind.</text>
+                        <text x="150" y="162" fill="#94a3b8" fontSize="8" fontWeight="bold" textAnchor="middle">Puerto White</text>
+                      </svg>
+                    </div>
+                  </div>
+                </section>
+              </>)}
 
             {/* Bottom Row: Payments Donut, Sentiment Index, Alerts */}
             {(activeAppFilter === "Rider" || activeAppFilter === "All") && (
               <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 mt-6">
-              {/* Payment Donut Chart */}
-              <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
-                <div className="card-header pb-1 mb-2">
-                  <h3 className="card-title">Estado de Pagos</h3>
-                  <span className="text-[10px] text-slate-500 font-semibold">Rider App</span>
-                </div>
-
-                <div className="relative flex justify-center items-center h-[160px] w-full">
-                  {!loading && hasDonutData ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={paymentDonutData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={45}
-                          outerRadius={65}
-                          paddingAngle={3}
-                          dataKey="value"
-                        >
-                          {paymentDonutData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          isAnimationActive={false}
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0].payload;
-                              return (
-                                <div className="bg-[#161925] border border-slate-800 rounded px-2 py-1 text-[10px] text-slate-200">
-                                  {data.name}: <span className="font-bold">{data.value}</span> reservas
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-center p-4">
-                      <span className="material-symbols-outlined text-slate-500 text-3xl mb-1">payments</span>
-                      <p className="text-[10px] text-slate-500">Payments App sin conexión</p>
-                    </div>
-                  )}
-                  {hasDonutData && (
-                    <div className="absolute flex flex-col items-center justify-center">
-                      <span className="text-xl font-bold text-slate-200">
-                        {pagados + pendientes + fallidos}
-                      </span>
-                      <span className="text-[8px] uppercase tracking-wider text-slate-500">
-                        Reservas
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-around text-[10px] font-semibold text-slate-400 mt-2 border-t border-slate-800/50 pt-3">
-                  <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-[#10b981]"></span>
-                    <span>Pagados ({hasDonutData ? pagados : "—"})</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span>
-                    <span>Pend. ({hasDonutData ? pendientes : "—"})</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-[#f43f5e]"></span>
-                    <span>Cancelados ({hasDonutData ? fallidos : "—"})</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* User Sentiment scale */}
-              <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
-                <div className="card-header pb-1 mb-2">
-                  <h3 className="card-title">Sentimiento de Usuario</h3>
-                  <span className="text-[10px] text-slate-500 font-semibold">Feedback App</span>
-                </div>
-
-                {loading ? (
-                  <div className="flex-grow flex items-center justify-center animate-pulse">
-                    <div className="h-20 w-full bg-white/5 rounded" />
-                  </div>
-                ) : metrics?.averageDriverRating != null ? (
-                  <div className="flex-grow flex flex-col justify-center">
-                    <div className="text-center mb-4">
-                      <h4 className="text-3xl font-extrabold text-slate-100">{pctPositive}%</h4>
-                      <p className="text-[10px] text-emerald-400 font-medium">Índice de Aceptación Positiva</p>
-                    </div>
-
-                    <div className="sentiment-scale">
-                      <div className="sentiment-row">
-                        <span className="sentiment-label">Positivo</span>
-                        <div className="sentiment-bar-bg">
-                          <div className="sentiment-bar-fill positive" style={{ width: `${pctPositive}%` }} />
-                        </div>
-                        <span className="sentiment-value">{pctPositive}%</span>
-                      </div>
-                      <div className="sentiment-row">
-                        <span className="sentiment-label">Neutral</span>
-                        <div className="sentiment-bar-bg">
-                          <div className="sentiment-bar-fill neutral" style={{ width: `${pctNeutral}%` }} />
-                        </div>
-                        <span className="sentiment-value">{pctNeutral}%</span>
-                      </div>
-                      <div className="sentiment-row">
-                        <span className="sentiment-label">Negativo</span>
-                        <div className="sentiment-bar-bg">
-                          <div className="sentiment-bar-fill negative" style={{ width: `${pctNegative}%` }} />
-                        </div>
-                        <span className="sentiment-value">{pctNegative}%</span>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex-grow flex flex-col items-center justify-center text-center p-4">
-                    <span className="material-symbols-outlined text-slate-500 text-3xl mb-1">sentiment_satisfied</span>
-                    <p className="text-[10px] text-slate-500">Feedback App sin conexión</p>
-                  </div>
-                )}
-
-                <div className="text-[9px] text-slate-500 text-center border-t border-slate-800/50 pt-3">
-                  Cálculo adaptativo derivado del promedio de estrellas actual.
-                </div>
-              </div>
-
-              {/* Alertas Recientes */}
-              <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
-                <div className="card-header pb-1 mb-2">
-                  <h3 className="card-title">Alertas Recientes</h3>
-                  <span className="live-badge !m-0 !py-0.5 text-[9px] !bg-rose-950/20 !border-rose-900/30 !text-rose-400">
-                    Sistema
-                  </span>
-                </div>
-
-                <div className="alerts-list flex-grow mt-2">
-                  {alertItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`alert-item ${item.type === "blue" ? "info" : ""}`}
-                    >
-                      <span className={`material-symbols-outlined alert-icon ${item.type}`}>
-                        {item.icon}
-                      </span>
-                      <div className="alert-content">
-                        <h5>{item.title}</h5>
-                        <p>{item.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="text-[9px] text-slate-500 text-center border-t border-slate-800/50 pt-3">
-                  Últimos incidentes de red de microservicios.
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Driver Charts Section */}
-          {(activeAppFilter === "Driver" || activeAppFilter === "All") && (
-            <>
-              {/* Header or subtitle for Driver section when All is selected */}
-              {activeAppFilter === "All" && (
-                <div className="col-span-full mt-8 mb-4 border-t border-slate-800/30 pt-6">
-                  <h3 className="text-lg font-bold text-slate-300 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-blue-500">commute</span>
-                    Métricas Operativas (Driver App)
-                  </h3>
-                </div>
-              )}
-
-              <section className="charts-grid">
-                {/* Curva de Evolución de Viajes */}
-                <div className="card" style={{ minWidth: 0 }}>
-                  <div className="card-header">
-                    <h3 className="card-title">Evolución de Viajes (Pools)</h3>
-                    <span className="text-[10px] text-slate-500 font-semibold">Tendencia Temporal</span>
+                {/* Payment Donut Chart */}
+                <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
+                  <div className="card-header pb-1 mb-2">
+                    <h3 className="card-title">Estado de Pagos</h3>
+                    <span className="text-[10px] text-slate-500 font-semibold">Rider App</span>
                   </div>
 
-                  <div className="chart-container">
-                    {loading ? (
-                      <div className="w-full h-full bg-white/5 rounded animate-pulse flex items-center justify-center">
-                        <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                          Cargando gráfico...
-                        </span>
-                      </div>
-                    ) : metrics?.driver?.travelTrends && metrics.driver.travelTrends.length > 0 ? (
+                  <div className="relative flex justify-center items-center h-[160px] w-full">
+                    {!loading && hasDonutData ? (
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart
-                          data={metrics.driver.travelTrends}
-                          margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
-                        >
-                          <defs>
-                            <linearGradient id="colorPools" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
-                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
-                          <XAxis
-                            dataKey="date"
-                            stroke="#475569"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={(val) => {
-                              if (!val) return "";
-                              if (val.includes(":")) return val; // 24-bucket format "HH:MM"
-                              const parts = val.split("-");
-                              return parts.length === 3 ? `${parts[2]}/${parts[1]}` : val; // "YYYY-MM-DD" -> "DD/MM"
-                            }}
-                          />
-                          <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
+                        <PieChart>
+                          <Pie
+                            data={paymentDonutData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={45}
+                            outerRadius={65}
+                            paddingAngle={3}
+                            dataKey="value"
+                          >
+                            {paymentDonutData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
                           <Tooltip
                             isAnimationActive={false}
-                            content={({ active, payload, label }) => {
+                            content={({ active, payload }) => {
                               if (active && payload && payload.length) {
+                                const data = payload[0].payload;
                                 return (
-                                  <div className="bg-[#161925] border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 shadow-xl">
-                                    <p className="font-bold text-blue-400 mb-1">{label}</p>
-                                    <p>Viajes Planificados: <span className="font-bold text-slate-100">{payload[0].value}</span></p>
+                                  <div className="bg-[#161925] border border-slate-800 rounded px-2 py-1 text-[10px] text-slate-200">
+                                    {data.name}: <span className="font-bold">{data.value}</span> reservas
                                   </div>
                                 );
                               }
                               return null;
                             }}
                           />
-                          <Area
-                            type="monotone"
-                            dataKey="poolCount"
-                            name="poolCount"
-                            stroke="#3b82f6"
-                            strokeWidth={3}
-                            fillOpacity={1}
-                            fill="url(#colorPools)"
-                          />
-                        </AreaChart>
+                        </PieChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="w-full h-full bg-white/5 rounded flex items-center justify-center text-slate-500">
-                        <span>Sin datos de viajes en este período</span>
+                      <div className="flex flex-col items-center justify-center text-center p-4">
+                        <span className="material-symbols-outlined text-slate-500 text-3xl mb-1">payments</span>
+                        <p className="text-[10px] text-slate-500">Payments App sin conexión</p>
+                      </div>
+                    )}
+                    {hasDonutData && (
+                      <div className="absolute flex flex-col items-center justify-center">
+                        <span className="text-xl font-bold text-slate-200">
+                          {pagados + pendientes + fallidos}
+                        </span>
+                        <span className="text-[8px] uppercase tracking-wider text-slate-500">
+                          Reservas
+                        </span>
                       </div>
                     )}
                   </div>
+
+                  <div className="flex justify-around text-[10px] font-semibold text-slate-400 mt-2 border-t border-slate-800/50 pt-3">
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-[#10b981]"></span>
+                      <span>Pagados ({hasDonutData ? pagados : "—"})</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span>
+                      <span>Pend. ({hasDonutData ? pendientes : "—"})</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-[#f43f5e]"></span>
+                      <span>Cancelados ({hasDonutData ? fallidos : "—"})</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Top 5 Destinos más Solicitados (Driver) */}
-                <div className="card">
+                {/* User Sentiment scale */}
+                <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
                   <div className="card-header pb-1 mb-2">
-                    <h3 className="card-title">Top Destinos Solicitados</h3>
-                    <span className="live-badge !m-0 !py-0.5 text-[9px] !bg-emerald-950/20 !border-emerald-900/30 !text-emerald-400">
-                      <span className="live-dot !bg-emerald-400"></span>Driver Network Active
+                    <h3 className="card-title">Sentimiento de Usuario</h3>
+                    <span className="text-[10px] text-slate-500 font-semibold">Feedback App</span>
+                  </div>
+
+                  {loading ? (
+                    <div className="flex-grow flex items-center justify-center animate-pulse">
+                      <div className="h-20 w-full bg-white/5 rounded" />
+                    </div>
+                  ) : metrics?.averageDriverRating != null ? (
+                    <div className="flex-grow flex flex-col justify-center">
+                      <div className="text-center mb-4">
+                        <h4 className="text-3xl font-extrabold text-slate-100">{pctPositive}%</h4>
+                        <p className="text-[10px] text-emerald-400 font-medium">Índice de Aceptación Positiva</p>
+                      </div>
+
+                      <div className="sentiment-scale">
+                        <div className="sentiment-row">
+                          <span className="sentiment-label">Positivo</span>
+                          <div className="sentiment-bar-bg">
+                            <div className="sentiment-bar-fill positive" style={{ width: `${pctPositive}%` }} />
+                          </div>
+                          <span className="sentiment-value">{pctPositive}%</span>
+                        </div>
+                        <div className="sentiment-row">
+                          <span className="sentiment-label">Neutral</span>
+                          <div className="sentiment-bar-bg">
+                            <div className="sentiment-bar-fill neutral" style={{ width: `${pctNeutral}%` }} />
+                          </div>
+                          <span className="sentiment-value">{pctNeutral}%</span>
+                        </div>
+                        <div className="sentiment-row">
+                          <span className="sentiment-label">Negativo</span>
+                          <div className="sentiment-bar-bg">
+                            <div className="sentiment-bar-fill negative" style={{ width: `${pctNegative}%` }} />
+                          </div>
+                          <span className="sentiment-value">{pctNegative}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex-grow flex flex-col items-center justify-center text-center p-4">
+                      <span className="material-symbols-outlined text-slate-500 text-3xl mb-1">sentiment_satisfied</span>
+                      <p className="text-[10px] text-slate-500">Feedback App sin conexión</p>
+                    </div>
+                  )}
+
+                  <div className="text-[9px] text-slate-500 text-center border-t border-slate-800/50 pt-3">
+                    Cálculo adaptativo derivado del promedio de estrellas actual.
+                  </div>
+                </div>
+
+                {/* Alertas Recientes */}
+                <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
+                  <div className="card-header pb-1 mb-2">
+                    <h3 className="card-title">Alertas Recientes</h3>
+                    <span className="live-badge !m-0 !py-0.5 text-[9px] !bg-rose-950/20 !border-rose-900/30 !text-rose-400">
+                      Sistema
                     </span>
                   </div>
 
-                  <div className="dest-list mt-2 mb-4">
-                    {loading ? (
-                      Array.from({ length: 3 }).map((_, idx) => (
-                        <div className="dest-item animate-pulse" key={idx}>
-                          <div className="h-3 bg-white/5 w-1/2 rounded mb-1" />
-                          <div className="dest-bar-bg">
-                            <div className="dest-bar-fill one" style={{ width: "0%" }} />
-                          </div>
+                  <div className="alerts-list flex-grow mt-2">
+                    {alertItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`alert-item ${item.type === "blue" ? "info" : ""}`}
+                      >
+                        <span className={`material-symbols-outlined alert-icon ${item.type}`}>
+                          {item.icon}
+                        </span>
+                        <div className="alert-content">
+                          <h5>{item.title}</h5>
+                          <p>{item.desc}</p>
                         </div>
-                      ))
-                    ) : metrics?.driver?.topRoutes && metrics.driver.topRoutes.length > 0 ? (
-                      (() => {
-                        const maxCount = Math.max(...metrics.driver.topRoutes.map(r => r.poolCount), 1);
-                        return metrics.driver.topRoutes.slice(0, 5).map((route, idx) => {
-                          const pct = Math.round((route.poolCount / maxCount) * 100);
-                          // Alternate colors for aesthetic hierarchy
-                          const fillClass = idx === 0 ? "one" : idx === 1 ? "two" : "three";
-                          return (
-                            <div className="dest-item" key={idx}>
-                              <div className="dest-info !text-[11px] !gap-1">
-                                <span className="dest-name font-semibold text-slate-300">{route.destination}</span>
-                                <span className="dest-value font-bold text-slate-200">
-                                  {route.poolCount} viajes
-                                </span>
-                              </div>
-                              <div className="dest-bar-bg !h-[5px]">
-                                <div
-                                  className={`dest-bar-fill ${fillClass}`}
-                                  style={{ width: `${pct}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          );
-                        });
-                      })()
-                    ) : (
-                      <div className="text-center text-slate-500 text-xs py-2">
-                        Sin datos de rutas en este período.
                       </div>
-                    )}
+                    ))}
+                  </div>
+
+                  <div className="text-[9px] text-slate-500 text-center border-t border-slate-800/50 pt-3">
+                    Últimos incidentes de red de microservicios.
                   </div>
                 </div>
               </section>
+            )}
 
-              {/* Driver Bottom Row: Pool Status Donut, Weekly Distribution Bar, Business Insights */}
-              <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 mt-6">
-                {/* Pool Status Donut Chart */}
-                <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
-                  <div className="card-header pb-1 mb-2">
-                    <h3 className="card-title">Estado de los Viajes</h3>
-                    <span className="text-[10px] text-slate-500 font-semibold">Driver App</span>
+            {/* Driver Charts Section */}
+            {(activeAppFilter === "Driver" || activeAppFilter === "All") && (
+              <>
+                {/* Header or subtitle for Driver section when All is selected */}
+                {activeAppFilter === "All" && (
+                  <div className="col-span-full mt-8 mb-4 border-t border-slate-800/30 pt-6">
+                    <h3 className="text-lg font-bold text-slate-300 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-blue-500">commute</span>
+                      Métricas Operativas (Driver App)
+                    </h3>
+                  </div>
+                )}
+
+                <section className="charts-grid">
+                  {/* Curva de Evolución de Viajes */}
+                  <div className="card" style={{ minWidth: 0 }}>
+                    <div className="card-header">
+                      <h3 className="card-title">Evolución de Viajes (Pools)</h3>
+                      <span className="text-[10px] text-slate-500 font-semibold">Tendencia Temporal</span>
+                    </div>
+
+                    <div className="chart-container">
+                      {loading ? (
+                        <div className="w-full h-full bg-white/5 rounded animate-pulse flex items-center justify-center">
+                          <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                            Cargando gráfico...
+                          </span>
+                        </div>
+                      ) : metrics?.driver?.travelTrends && metrics.driver.travelTrends.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart
+                            data={metrics.driver.travelTrends}
+                            margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                          >
+                            <defs>
+                              <linearGradient id="colorPools" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                            <XAxis
+                              dataKey="date"
+                              stroke="#475569"
+                              fontSize={10}
+                              tickLine={false}
+                              axisLine={false}
+                              tickFormatter={(val) => {
+                                if (!val) return "";
+                                if (val.includes(":")) return val; // 24-bucket format "HH:MM"
+                                const parts = val.split("-");
+                                return parts.length === 3 ? `${parts[2]}/${parts[1]}` : val; // "YYYY-MM-DD" -> "DD/MM"
+                              }}
+                            />
+                            <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
+                            <Tooltip
+                              isAnimationActive={false}
+                              content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                  return (
+                                    <div className="bg-[#161925] border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 shadow-xl">
+                                      <p className="font-bold text-blue-400 mb-1">{label}</p>
+                                      <p>Viajes Planificados: <span className="font-bold text-slate-100">{payload[0].value}</span></p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="poolCount"
+                              name="poolCount"
+                              stroke="#3b82f6"
+                              strokeWidth={3}
+                              fillOpacity={1}
+                              fill="url(#colorPools)"
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="w-full h-full bg-white/5 rounded flex items-center justify-center text-slate-500">
+                          <span>Sin datos de viajes en este período</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="relative flex justify-center items-center h-[160px] w-full">
-                    {!loading && metrics?.driver?.poolsByStatus ? (
-                      (() => {
-                        const statusColors: Record<string, string> = {
-                          AVAILABLE: "#60a5fa",    // Blue
-                          ASSIGNED: "#3b82f6",     // Dark Blue
-                          LOCKED: "#f59e0b",       // Orange
-                          IN_PROGRESS: "#8b5cf6",  // Purple
-                          COMPLETED: "#10b981",    // Green
-                          CANCELED: "#f43f5e",     // Red
-                        };
-                        const statusTranslations: Record<string, string> = {
-                          AVAILABLE: "Disponible",
-                          ASSIGNED: "Asignado",
-                          LOCKED: "Bloqueado",
-                          IN_PROGRESS: "En Progreso",
-                          COMPLETED: "Completado",
-                          CANCELED: "Cancelado",
-                        };
-                        const poolStatusData = Object.entries(metrics.driver.poolsByStatus)
-                          .filter(([_, value]) => (value || 0) > 0)
-                          .map(([key, value]) => ({
-                            name: statusTranslations[key] || key,
-                            value,
-                            color: statusColors[key] || "#94a3b8",
-                          }));
-                        const totalPoolsSum = poolStatusData.reduce((acc, curr) => acc + curr.value, 0);
+                  {/* Top 5 Destinos más Solicitados (Driver) */}
+                  <div className="card">
+                    <div className="card-header pb-1 mb-2">
+                      <h3 className="card-title">Top Destinos Solicitados</h3>
+                      <span className="live-badge !m-0 !py-0.5 text-[9px] !bg-emerald-950/20 !border-emerald-900/30 !text-emerald-400">
+                        <span className="live-dot !bg-emerald-400"></span>Driver Network Active
+                      </span>
+                    </div>
 
-                        if (totalPoolsSum === 0) {
-                          return (
-                            <div className="flex flex-col items-center justify-center text-center p-4">
-                              <span className="material-symbols-outlined text-slate-500 text-3xl mb-1">commute</span>
-                              <p className="text-[10px] text-slate-500">Sin pools registrados</p>
+                    <div className="dest-list mt-2 mb-4">
+                      {loading ? (
+                        Array.from({ length: 3 }).map((_, idx) => (
+                          <div className="dest-item animate-pulse" key={idx}>
+                            <div className="h-3 bg-white/5 w-1/2 rounded mb-1" />
+                            <div className="dest-bar-bg">
+                              <div className="dest-bar-fill one" style={{ width: "0%" }} />
                             </div>
-                          );
-                        }
+                          </div>
+                        ))
+                      ) : metrics?.driver?.topRoutes && metrics.driver.topRoutes.length > 0 ? (
+                        (() => {
+                          const maxCount = Math.max(...metrics.driver.topRoutes.map(r => r.poolCount), 1);
+                          return metrics.driver.topRoutes.slice(0, 5).map((route, idx) => {
+                            const pct = Math.round((route.poolCount / maxCount) * 100);
+                            // Alternate colors for aesthetic hierarchy
+                            const fillClass = idx === 0 ? "one" : idx === 1 ? "two" : "three";
+                            return (
+                              <div className="dest-item" key={idx}>
+                                <div className="dest-info !text-[11px] !gap-1">
+                                  <span className="dest-name font-semibold text-slate-300">{route.destination}</span>
+                                  <span className="dest-value font-bold text-slate-200">
+                                    {route.poolCount} viajes
+                                  </span>
+                                </div>
+                                <div className="dest-bar-bg !h-[5px]">
+                                  <div
+                                    className={`dest-bar-fill ${fillClass}`}
+                                    style={{ width: `${pct}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()
+                      ) : (
+                        <div className="text-center text-slate-500 text-xs py-2">
+                          Sin datos de rutas en este período.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </section>
 
-                        return (
-                          <>
+                {/* Driver Bottom Row: Pool Status Donut, Weekly Distribution Bar, Business Insights */}
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 mt-6">
+                  {/* Pool Status Donut Chart */}
+                  <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
+                    <div className="card-header pb-1 mb-2">
+                      <h3 className="card-title">Estado de los Viajes</h3>
+                      <span className="text-[10px] text-slate-500 font-semibold">Driver App</span>
+                    </div>
+
+                    <div className="relative flex justify-center items-center h-[160px] w-full">
+                      {!loading && metrics?.driver?.poolsByStatus ? (
+                        (() => {
+                          const statusColors: Record<string, string> = {
+                            AVAILABLE: "#60a5fa",    // Blue
+                            ASSIGNED: "#3b82f6",     // Dark Blue
+                            LOCKED: "#f59e0b",       // Orange
+                            IN_PROGRESS: "#8b5cf6",  // Purple
+                            COMPLETED: "#10b981",    // Green
+                            CANCELED: "#f43f5e",     // Red
+                          };
+                          const statusTranslations: Record<string, string> = {
+                            AVAILABLE: "Disponible",
+                            ASSIGNED: "Asignado",
+                            LOCKED: "Bloqueado",
+                            IN_PROGRESS: "En Progreso",
+                            COMPLETED: "Completado",
+                            CANCELED: "Cancelado",
+                          };
+                          const poolStatusData = Object.entries(metrics.driver.poolsByStatus)
+                            .filter(([_, value]) => (value || 0) > 0)
+                            .map(([key, value]) => ({
+                              name: statusTranslations[key] || key,
+                              value,
+                              color: statusColors[key] || "#94a3b8",
+                            }));
+                          const totalPoolsSum = poolStatusData.reduce((acc, curr) => acc + curr.value, 0);
+
+                          if (totalPoolsSum === 0) {
+                            return (
+                              <div className="flex flex-col items-center justify-center text-center p-4">
+                                <span className="material-symbols-outlined text-slate-500 text-3xl mb-1">commute</span>
+                                <p className="text-[10px] text-slate-500">Sin pools registrados</p>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                  <Pie
+                                    data={poolStatusData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={45}
+                                    outerRadius={65}
+                                    paddingAngle={3}
+                                    dataKey="value"
+                                  >
+                                    {poolStatusData.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                  </Pie>
+                                  <Tooltip
+                                    isAnimationActive={false}
+                                    content={({ active, payload }) => {
+                                      if (active && payload && payload.length) {
+                                        const data = payload[0].payload;
+                                        return (
+                                          <div className="bg-[#161925] border border-slate-800 rounded px-2 py-1 text-[10px] text-slate-200">
+                                            {data.name}: <span className="font-bold">{data.value}</span> pools
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }}
+                                  />
+                                </PieChart>
+                              </ResponsiveContainer>
+                              <div className="absolute flex flex-col items-center justify-center">
+                                <span className="text-xl font-bold text-slate-200">
+                                  {totalPoolsSum}
+                                </span>
+                                <span className="text-[8px] uppercase tracking-wider text-slate-500">
+                                  Viajes
+                                </span>
+                              </div>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-center p-4">
+                          <span className="material-symbols-outlined text-slate-500 text-3xl mb-1">commute</span>
+                          <p className="text-[10px] text-slate-500">Driver App sin conexión</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[9px] font-semibold text-slate-400 mt-2 border-t border-slate-800/50 pt-3">
+                      <div className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+                        <span>Comp.</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#3b82f6]"></span>
+                        <span>Asig.</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></span>
+                        <span>Bloq.</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]"></span>
+                        <span>Prog.</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#f43f5e]"></span>
+                        <span>Canc.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Weekday Distribution Bar Chart */}
+                  <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
+                    <div className="card-header pb-1 mb-2">
+                      <h3 className="card-title">Distribución por Día</h3>
+                      <span className="text-[10px] text-slate-500 font-semibold">Picos de Demanda</span>
+                    </div>
+
+                    <div className="h-[160px] w-full mt-2">
+                      {!loading && metrics?.driver?.poolsDistributionByDay ? (
+                        (() => {
+                          const weekdayData = Object.entries(metrics.driver.poolsDistributionByDay).map(([day, count]) => ({
+                            name: day,
+                            Pools: count,
+                          }));
+                          const values = weekdayData.map(d => d.Pools);
+                          const minPools = values.length > 0 ? Math.min(...values) : 0;
+                          const maxPools = values.length > 0 ? Math.max(...values) : 0;
+
+                          if (maxPools === 0) {
+                            return (
+                              <div className="flex h-full items-center justify-center text-slate-500 text-xs">
+                                Sin datos registrados
+                              </div>
+                            );
+                          }
+
+                          return (
                             <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <Pie
-                                  data={poolStatusData}
-                                  cx="50%"
-                                  cy="50%"
-                                  innerRadius={45}
-                                  outerRadius={65}
-                                  paddingAngle={3}
-                                  dataKey="value"
-                                >
-                                  {poolStatusData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                  ))}
-                                </Pie>
+                              <BarChart data={weekdayData} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#2a2f45" />
+                                <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} />
+                                <YAxis stroke="#94a3b8" fontSize={9} allowDecimals={false} tickLine={false} />
                                 <Tooltip
                                   isAnimationActive={false}
                                   content={({ active, payload }) => {
                                     if (active && payload && payload.length) {
-                                      const data = payload[0].payload;
                                       return (
                                         <div className="bg-[#161925] border border-slate-800 rounded px-2 py-1 text-[10px] text-slate-200">
-                                          {data.name}: <span className="font-bold">{data.value}</span> pools
+                                          {payload[0].payload.name}: <span className="font-bold">{payload[0].value}</span> pools
                                         </div>
                                       );
                                     }
                                     return null;
                                   }}
                                 />
-                              </PieChart>
+                                <Bar dataKey="Pools" radius={[3, 3, 0, 0]}>
+                                  {weekdayData.map((entry, index) => {
+                                    let barColor = "#3b82f6"; // Default blue
+                                    if (entry.Pools === maxPools && maxPools > 0) {
+                                      barColor = "#10b981"; // Green peak
+                                    } else if (entry.Pools === minPools && minPools < maxPools) {
+                                      barColor = "#f43f5e"; // Red valley
+                                    }
+                                    return <Cell key={`cell-${index}`} fill={barColor} />;
+                                  })}
+                                </Bar>
+                              </BarChart>
                             </ResponsiveContainer>
-                            <div className="absolute flex flex-col items-center justify-center">
-                              <span className="text-xl font-bold text-slate-200">
-                                {totalPoolsSum}
-                              </span>
-                              <span className="text-[8px] uppercase tracking-wider text-slate-500">
-                                Viajes
-                              </span>
-                            </div>
-                          </>
-                        );
-                      })()
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-center p-4">
-                        <span className="material-symbols-outlined text-slate-500 text-3xl mb-1">commute</span>
-                        <p className="text-[10px] text-slate-500">Driver App sin conexión</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[9px] font-semibold text-slate-400 mt-2 border-t border-slate-800/50 pt-3">
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
-                      <span>Comp.</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#3b82f6]"></span>
-                      <span>Asig.</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></span>
-                      <span>Bloq.</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]"></span>
-                      <span>Prog.</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f43f5e]"></span>
-                      <span>Canc.</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Weekday Distribution Bar Chart */}
-                <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
-                  <div className="card-header pb-1 mb-2">
-                    <h3 className="card-title">Distribución por Día</h3>
-                    <span className="text-[10px] text-slate-500 font-semibold">Picos de Demanda</span>
-                  </div>
-
-                  <div className="h-[160px] w-full mt-2">
-                    {!loading && metrics?.driver?.poolsDistributionByDay ? (
-                      (() => {
-                        const weekdayData = Object.entries(metrics.driver.poolsDistributionByDay).map(([day, count]) => ({
-                          name: day,
-                          Pools: count,
-                        }));
-                        const values = weekdayData.map(d => d.Pools);
-                        const minPools = values.length > 0 ? Math.min(...values) : 0;
-                        const maxPools = values.length > 0 ? Math.max(...values) : 0;
-
-                        if (maxPools === 0) {
-                          return (
-                            <div className="flex h-full items-center justify-center text-slate-500 text-xs">
-                              Sin datos registrados
-                            </div>
                           );
-                        }
+                        })()
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-slate-500 text-xs">
+                          Driver App sin conexión
+                        </div>
+                      )}
+                    </div>
 
-                        return (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={weekdayData} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#2a2f45" />
-                              <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} />
-                              <YAxis stroke="#94a3b8" fontSize={9} allowDecimals={false} tickLine={false} />
-                              <Tooltip
-                                isAnimationActive={false}
-                                content={({ active, payload }) => {
-                                  if (active && payload && payload.length) {
-                                    return (
-                                      <div className="bg-[#161925] border border-slate-800 rounded px-2 py-1 text-[10px] text-slate-200">
-                                        {payload[0].payload.name}: <span className="font-bold">{payload[0].value}</span> pools
-                                      </div>
-                                    );
-                                  }
-                                  return null;
-                                }}
-                              />
-                              <Bar dataKey="Pools" radius={[3, 3, 0, 0]}>
-                                {weekdayData.map((entry, index) => {
-                                  let barColor = "#3b82f6"; // Default blue
-                                  if (entry.Pools === maxPools && maxPools > 0) {
-                                    barColor = "#10b981"; // Green peak
-                                  } else if (entry.Pools === minPools && minPools < maxPools) {
-                                    barColor = "#f43f5e"; // Red valley
-                                  }
-                                  return <Cell key={`cell-${index}`} fill={barColor} />;
-                                })}
-                              </Bar>
-                            </BarChart>
-                          </ResponsiveContainer>
-                        );
-                      })()
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-slate-500 text-xs">
-                        Driver App sin conexión
-                      </div>
-                    )}
+                    <div className="text-[9px] text-slate-500 text-center border-t border-slate-800/50 pt-3">
+                      Destaca el día de mayor demanda en verde y de menor en rojo.
+                    </div>
                   </div>
 
-                  <div className="text-[9px] text-slate-500 text-center border-t border-slate-800/50 pt-3">
-                    Destaca el día de mayor demanda en verde y de menor en rojo.
-                  </div>
-                </div>
+                  {/* Smart Business Insights Card */}
+                  <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
+                    <div className="card-header pb-1 mb-2">
+                      <h3 className="card-title">Módulo de Business Insights</h3>
+                      <span className="live-badge !m-0 !py-0.5 text-[9px] !bg-blue-950/20 !border-blue-900/30 !text-blue-400">
+                        Inteligente
+                      </span>
+                    </div>
 
-                {/* Smart Business Insights Card */}
-                <div className="card flex flex-col justify-between" style={{ minHeight: '300px' }}>
-                  <div className="card-header pb-1 mb-2">
-                    <h3 className="card-title">Módulo de Business Insights</h3>
-                    <span className="live-badge !m-0 !py-0.5 text-[9px] !bg-blue-950/20 !border-blue-900/30 !text-blue-400">
-                      Inteligente
-                    </span>
-                  </div>
+                    <div className="alerts-list flex-grow mt-2 flex flex-col gap-2 max-h-[190px] overflow-y-auto">
+                      {!loading && metrics?.driver ? (
+                        (() => {
+                          const insights = [];
+                          const driver = metrics.driver;
 
-                  <div className="alerts-list flex-grow mt-2 flex flex-col gap-2 max-h-[190px] overflow-y-auto">
-                    {!loading && metrics?.driver ? (
-                      (() => {
-                        const insights = [];
-                        const driver = metrics.driver;
-
-                        // 1. Low utilization warning
-                        if (driver.driverUtilizationRate != null && driver.driverUtilizationRate < 60) {
-                          insights.push({
-                            id: "low-util",
-                            type: "coral",
-                            icon: "warning",
-                            title: "Baja utilización de choferes",
-                            desc: `⚠️ Utilización actual del ${driver.driverUtilizationRate}%. Considerar incentivos para conectar más conductores.`,
-                          });
-                        }
-
-                        // 2. Peak demand day calculation
-                        if (driver.poolsDistributionByDay) {
-                          let maxDay = "";
-                          let maxVal = -1;
-                          Object.entries(driver.poolsDistributionByDay).forEach(([day, val]) => {
-                            if (val > maxVal) {
-                              maxVal = val;
-                              maxDay = day;
-                            }
-                          });
-                          if (maxVal > 0) {
+                          // 1. Low utilization warning
+                          if (driver.driverUtilizationRate != null && driver.driverUtilizationRate < 60) {
                             insights.push({
-                              id: "peak-demand",
-                              type: "blue",
-                              icon: "lightbulb",
-                              title: "Pico de Demanda Semanal",
-                              desc: `💡 El día ${maxDay} experimenta la mayor demanda de la semana. Reforzar disponibilidad.`,
+                              id: "low-util",
+                              type: "coral",
+                              icon: "warning",
+                              title: "Baja utilización de choferes",
+                              desc: `⚠️ Utilización actual del ${driver.driverUtilizationRate}%. Considerar incentivos para conectar más conductores.`,
                             });
                           }
-                        }
 
-                        // 3. Route Estrella
-                        if (driver.topRoutes && driver.topRoutes.length > 0) {
-                          const top = driver.topRoutes[0];
-                          insights.push({
-                            id: "star-route",
-                            type: "blue",
-                            icon: "workspace_premium",
-                            title: "Ruta Estrella",
-                            desc: `🚀 El destino ${top.destination} es el más transitado con ${top.poolCount} viajes.`,
-                          });
-                        }
+                          // 2. Peak demand day calculation
+                          if (driver.poolsDistributionByDay) {
+                            let maxDay = "";
+                            let maxVal = -1;
+                            Object.entries(driver.poolsDistributionByDay).forEach(([day, val]) => {
+                              if (val > maxVal) {
+                                maxVal = val;
+                                maxDay = day;
+                              }
+                            });
+                            if (maxVal > 0) {
+                              insights.push({
+                                id: "peak-demand",
+                                type: "blue",
+                                icon: "lightbulb",
+                                title: "Pico de Demanda Semanal",
+                                desc: `💡 El día ${maxDay} experimenta la mayor demanda de la semana. Reforzar disponibilidad.`,
+                              });
+                            }
+                          }
 
-                        if (insights.length === 0) {
-                          return (
-                            <p className="text-[10px] text-slate-500 text-center py-6 italic">
-                              Sin recomendaciones o alertas para este período.
-                            </p>
-                          );
-                        }
+                          // 3. Route Estrella
+                          if (driver.topRoutes && driver.topRoutes.length > 0) {
+                            const top = driver.topRoutes[0];
+                            insights.push({
+                              id: "star-route",
+                              type: "blue",
+                              icon: "workspace_premium",
+                              title: "Ruta Estrella",
+                              desc: `🚀 El destino ${top.destination} es el más transitado con ${top.poolCount} viajes.`,
+                            });
+                          }
 
-                        return insights.map((insight) => (
-                          <div
-                            key={insight.id}
-                            className={`flex gap-2 p-2 rounded text-[11px] ${insight.type === "coral" ? "bg-rose-950/20 border border-rose-900/30" : "bg-blue-950/20 border border-blue-900/30"}`}
-                          >
-                            <span className={`material-symbols-outlined text-[15px] ${insight.type === "coral" ? "text-rose-400" : "text-blue-400"}`}>
-                              {insight.icon}
-                            </span>
-                            <div>
-                              <h5 className="font-semibold text-slate-200">{insight.title}</h5>
-                              <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">{insight.desc}</p>
+                          if (insights.length === 0) {
+                            return (
+                              <p className="text-[10px] text-slate-500 text-center py-6 italic">
+                                Sin recomendaciones o alertas para este período.
+                              </p>
+                            );
+                          }
+
+                          return insights.map((insight) => (
+                            <div
+                              key={insight.id}
+                              className={`flex gap-2 p-2 rounded text-[11px] ${insight.type === "coral" ? "bg-rose-950/20 border border-rose-900/30" : "bg-blue-950/20 border border-blue-900/30"}`}
+                            >
+                              <span className={`material-symbols-outlined text-[15px] ${insight.type === "coral" ? "text-rose-400" : "text-blue-400"}`}>
+                                {insight.icon}
+                              </span>
+                              <div>
+                                <h5 className="font-semibold text-slate-200">{insight.title}</h5>
+                                <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">{insight.desc}</p>
+                              </div>
                             </div>
-                          </div>
-                        ));
-                      })()
-                    ) : (
-                      <p className="text-[10px] text-slate-500 text-center py-6 italic">
-                        Métricas de choferes no disponibles.
-                      </p>
-                    )}
-                  </div>
+                          ));
+                        })()
+                      ) : (
+                        <p className="text-[10px] text-slate-500 text-center py-6 italic">
+                          Métricas de choferes no disponibles.
+                        </p>
+                      )}
+                    </div>
 
-                  <div className="text-[9px] text-slate-500 text-center border-t border-slate-800/50 pt-3">
-                    Sugerencias operativas calculadas en tiempo real.
+                    <div className="text-[9px] text-slate-500 text-center border-t border-slate-800/50 pt-3">
+                      Sugerencias operativas calculadas en tiempo real.
+                    </div>
                   </div>
-                </div>
-              </section>
-            </>)}
+                </section>
+              </>)}
           </>
         )}
 
@@ -2813,11 +2813,11 @@ export default function DashboardPage() {
 
         {/* Drivers View */}
         {activeTab === "Drivers" && (
-          <>
-            <header className="dashboard-header flex justify-between items-center mb-6">
+          <div className="flex flex-col gap-12 pb-12">
+            <header className="dashboard-header flex justify-between items-center">
               <div className="header-title">
                 <h2>Conductores (Drivers)</h2>
-                <p>Análisis de reputación y calidad de servicio de los choferes de WeShuttle.</p>
+                <p>Análisis de reputación, rendimiento y riesgo de los choferes de WeShuttle.</p>
               </div>
               <button onClick={() => setActiveTab("Dashboard")} className="pill flex items-center gap-1">
                 <span className="material-symbols-outlined" style={{ fontSize: "1.1rem" }}>arrow_back</span>
@@ -2825,8 +2825,8 @@ export default function DashboardPage() {
               </button>
             </header>
 
-            {/* Drivers KPIs */}
-            <section className="kpi-grid mb-6">
+            {/* 1. Drivers KPIs */}
+            <section className="kpi-grid">
               <div className="kpi-card">
                 <div className="kpi-header">
                   <span className="kpi-title">Reputación Promedio</span>
@@ -2867,30 +2867,23 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-[10px] text-slate-400 mt-2">Volumen de feedback en el período</div>
               </div>
+
+              <div className="kpi-card">
+                <div className="kpi-header">
+                  <span className="kpi-title">Conductores en Riesgo</span>
+                  <div className="kpi-icon" style={{ color: "#f43f5e", background: "rgba(244, 63, 94, 0.1)" }}>
+                    <span className="material-symbols-outlined">warning</span>
+                  </div>
+                </div>
+                <div className="kpi-value text-white">
+                  {metrics?.driver?.driversData?.driversAtRisk != null ? metrics.driver.driversData.driversAtRisk.length : "—"}
+                </div>
+                <div className="text-[10px] text-slate-400 mt-2">Choferes con alertas activas</div>
+              </div>
             </section>
 
-            {/* Conductores en Alerta - Insights */}
-            {metrics?.feedbackInsights && metrics.feedbackInsights.filter(ins => ins.includes("⚠️ Calidad de Servicio")).length > 0 && (
-              <div className="insight-alert-card mb-6 !border-rose-900/30 !bg-rose-950/10">
-                <h3 className="flex items-center gap-2 text-sm font-bold text-rose-400 mb-3">
-                  <span className="material-symbols-outlined" style={{ fontSize: "1.2rem" }}>warning</span>
-                  Alertas de Calidad de Conductores
-                </h3>
-                <div className="flex flex-col gap-2">
-                  {metrics.feedbackInsights.filter(ins => ins.includes("⚠️ Calidad de Servicio")).map((insight, idx) => (
-                    <div key={idx} className="insight-alert-item">
-                      <span className="material-symbols-outlined text-rose-400 insight-alert-icon" style={{ fontSize: "1.1rem" }}>
-                        warning
-                      </span>
-                      <p className="text-xs text-slate-300">{insight.replace("⚠️ ", "")}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Rankings Grid: Top 5 Buenos vs Top 5 Malos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 2. Rankings Grid: Top 5 Buenos vs Top 5 Malos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               {/* Top 5 Estrella */}
               <div className="card">
                 <div className="card-header flex items-center justify-between">
@@ -2975,7 +2968,7 @@ export default function DashboardPage() {
                             <td>
                               {driver.comments && driver.comments.length > 0 ? (
                                 <div className="text-[10px] text-slate-400 max-w-[250px] line-clamp-2 italic" title={driver.comments.join("\n")}>
-                                  "{driver.comments[0]}"
+                                  &quot;{driver.comments[0]}&quot;
                                 </div>
                               ) : (
                                 <span className="text-slate-500 text-xs italic">Sin comentarios</span>
@@ -2991,7 +2984,235 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-          </>
+
+            {/* 3. ⭐ Driver of the Month Spotlight */}
+            {metrics?.driver?.driversData?.driverOfTheMonth && (
+              <div className="card" style={{
+                background: "linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(37, 99, 235, 0.05))",
+                border: "1px solid rgba(245, 158, 11, 0.25)",
+              }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-14 h-14 rounded-full" style={{
+                      background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                      boxShadow: "0 0 20px rgba(245, 158, 11, 0.3)",
+                    }}>
+                      <span className="material-symbols-outlined text-white" style={{ fontSize: "1.8rem" }}>workspace_premium</span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-amber-400">⭐ Conductor del Mes</h3>
+                      </div>
+                      <p className="text-xl font-bold text-white mt-0.5">{metrics.driver.driversData.driverOfTheMonth.name}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{metrics.driver.driversData.driverOfTheMonth.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-6 text-center">
+                    <div>
+                      <p className="text-2xl font-bold text-emerald-400">{metrics.driver.driversData.driverOfTheMonth.completedCount}</p>
+                      <p className="text-[10px] text-slate-400 font-semibold">Viajes Completados</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-blue-400">{formatCurrency(metrics.driver.driversData.driverOfTheMonth.revenue)}</p>
+                      <p className="text-[10px] text-slate-400 font-semibold">Ingresos Generados</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-yellow-400">{metrics.driver.driversData.driverOfTheMonth.rating}</p>
+                      <p className="text-[10px] text-slate-400 font-semibold">Rating Promedio</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 4. Entregas Completadas | Ingresos Generados + Gráfico */}
+            {metrics?.driver?.driversData?.driverStats && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                {/* 🚀 Top Entregas Completadas */}
+                <div className="card flex flex-col h-full">
+                  <div className="card-header flex items-center justify-between pb-2">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-200">🚀 Entregas Completadas</h3>
+                      <p className="text-[10px] text-slate-500">Ranking por viajes finalizados</p>
+                    </div>
+                  </div>
+                  <div className="table-container mt-4 flex-1">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Conductor</th>
+                          <th>Viajes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...metrics.driver.driversData.driverStats]
+                          .sort((a, b) => b.completedCount - a.completedCount)
+                          .slice(0, 5)
+                          .map((d, idx) => (
+                            <tr key={d.driverId}>
+                              <td>
+                                <div className="flex items-center gap-2">
+                                  <span className="badge-rank">{idx + 1}</span>
+                                  <span className="font-bold text-slate-200 text-xs">{d.name}</span>
+                                </div>
+                              </td>
+                              <td>
+                                <span className="font-bold text-emerald-400 text-xs">{d.completedCount}</span>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 💰 Top Ingresos Generados */}
+                <div className="card flex flex-col h-full">
+                  <div className="card-header flex items-center justify-between pb-2">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-200">💰 Ingresos Generados</h3>
+                      <p className="text-[10px] text-slate-500">Ranking por facturación total</p>
+                    </div>
+                  </div>
+                  <div className="table-container mt-4 flex-1">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Conductor</th>
+                          <th>Ingresos</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...metrics.driver.driversData.driverStats]
+                          .sort((a, b) => b.revenue - a.revenue)
+                          .slice(0, 5)
+                          .map((d, idx) => (
+                            <tr key={d.driverId}>
+                              <td>
+                                <div className="flex items-center gap-2">
+                                  <span className="badge-rank">{idx + 1}</span>
+                                  <span className="font-bold text-slate-200 text-xs">{d.name}</span>
+                                </div>
+                              </td>
+                              <td>
+                                <span className="font-bold text-blue-400 text-xs">{formatCurrency(d.revenue)}</span>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Gráfico de Desempeño */}
+                <div className="card flex flex-col h-full">
+                  <div className="card-header pb-2">
+                    <h3 className="text-sm font-bold text-slate-200">📊 Desempeño por Conductor</h3>
+                    <p className="text-[10px] text-slate-500">Relación Viajes vs Ingresos</p>
+                  </div>
+                  <div className="mt-4 flex-1 flex items-center justify-center min-h-[240px]">
+                    {metrics.driver.driversData.driverStats.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={240}>
+                        <BarChart data={[...metrics.driver.driversData.driverStats].sort((a, b) => b.completedCount - a.completedCount).slice(0, 5)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#2a2f45" vertical={false} />
+                          <XAxis dataKey="name" stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(val) => val.split(' ')[0]} />
+                          <YAxis yAxisId="left" stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} />
+                          <YAxis yAxisId="right" orientation="right" stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val / 1000}k`} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', fontSize: '11px' }}
+                            itemStyle={{ color: '#e2e8f0' }}
+                          />
+                          <Bar yAxisId="left" dataKey="completedCount" name="Viajes" fill="#34d399" radius={[2, 2, 0, 0]} maxBarSize={20} />
+                          <Bar yAxisId="right" dataKey="revenue" name="Ingresos" fill="#60a5fa" radius={[2, 2, 0, 0]} maxBarSize={20} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <span className="text-xs text-slate-500">Sin datos para graficar</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 5. ⚠️ Drivers at Risk — Smart Diagnostic Widget */}
+            {metrics?.driver?.driversData?.driversAtRisk && metrics.driver.driversData.driversAtRisk.length > 0 && (
+              <div>
+                <h3 className="text-lg font-bold text-slate-300 flex items-center gap-2 mb-4">
+                  <span className="material-symbols-outlined text-rose-400">report</span>
+                  Conductores en Riesgo
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {metrics.driver.driversData.driversAtRisk.slice(0, 6).map((driver) => (
+                    <div
+                      key={driver.driverId}
+                      className="card"
+                      style={{
+                        border: driver.riskLevel === "HIGH"
+                          ? "1px solid rgba(244, 63, 94, 0.35)"
+                          : "1px solid rgba(245, 158, 11, 0.3)",
+                        background: driver.riskLevel === "HIGH"
+                          ? "rgba(244, 63, 94, 0.04)"
+                          : "rgba(245, 158, 11, 0.03)",
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined" style={{
+                            fontSize: "1.3rem",
+                            color: driver.riskLevel === "HIGH" ? "#f43f5e" : "#f59e0b",
+                          }}>warning</span>
+                          <div>
+                            <p className="font-bold text-sm text-slate-200">{driver.name}</p>
+                            <p className="text-[9px] text-slate-500 font-mono">{driver.driverId}</p>
+                          </div>
+                        </div>
+                        <span
+                          className="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide"
+                          style={{
+                            background: driver.riskLevel === "HIGH"
+                              ? "rgba(244, 63, 94, 0.15)"
+                              : "rgba(245, 158, 11, 0.15)",
+                            color: driver.riskLevel === "HIGH" ? "#fb7185" : "#fbbf24",
+                            border: `1px solid ${driver.riskLevel === "HIGH" ? "rgba(244, 63, 94, 0.3)" : "rgba(245, 158, 11, 0.3)"}`,
+                          }}
+                        >
+                          {driver.riskLevel}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {driver.reasons.map((reason: string, idx: number) => (
+                          <div key={idx} className="flex items-start gap-1.5 text-[11px] text-slate-400">
+                            <span className="text-rose-400 mt-0.5" style={{ fontSize: "6px" }}>●</span>
+                            {reason}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 6. Alertas de Calidad de Conductores (Insights) */}
+            {metrics?.feedbackInsights && metrics.feedbackInsights.filter(ins => ins.includes("⚠️ Calidad de Servicio")).length > 0 && (
+              <div className="insight-alert-card !border-rose-900/30 !bg-rose-950/10">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-rose-400 mb-3">
+                  <span className="material-symbols-outlined" style={{ fontSize: "1.2rem" }}>warning</span>
+                  Alertas de Calidad de Conductores
+                </h3>
+                <div className="flex flex-col gap-2">
+                  {metrics.feedbackInsights.filter(ins => ins.includes("⚠️ Calidad de Servicio")).map((insight, idx) => (
+                    <div key={idx} className="insight-alert-item">
+                      <span className="material-symbols-outlined text-rose-400 insight-alert-icon" style={{ fontSize: "1.1rem" }}>
+                        warning
+                      </span>
+                      <p className="text-xs text-slate-300">{insight.replace(/⚠️\s*/, "")}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Settings View */}
@@ -3022,8 +3243,8 @@ export default function DashboardPage() {
                     <h4 className="font-semibold text-slate-200 text-sm">Tema de Interfaz</h4>
                     <p className="text-xs text-slate-400 mt-1">Cambia entre el modo claro y modo oscuro para la visualización del dashboard.</p>
                   </div>
-                  
-                  <button 
+
+                  <button
                     onClick={toggleTheme}
                     className="flex items-center justify-center gap-3 px-6 py-2 min-w-[160px] rounded-lg font-bold border border-slate-700/60 hover:border-blue-500 transition-all select-none cursor-pointer"
                     style={{

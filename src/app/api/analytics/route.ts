@@ -18,6 +18,11 @@ interface DriverMetrics {
   poolsDistributionByDay?: Record<string, number>;
   travelTrends?: { date: string; poolCount: number }[];
   topRoutes?: { destination: string; poolCount: number }[];
+  driversData?: {
+    driverStats: any[];
+    driverOfTheMonth: any | null;
+    driversAtRisk: any[];
+  };
 }
 
 interface FeedbackMetrics {
