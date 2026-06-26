@@ -27,6 +27,7 @@
   --bg-sidebar: rgba(17, 19, 27, 0.8);
   --brand-title-gradient: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
   --bg-dropdown: #0b1528;
+  --bg-toast: rgba(25, 27, 35, 0.9);
 }
 
 .light {
@@ -55,6 +56,7 @@
   --bg-sidebar: rgba(241, 245, 249, 0.9);
   --brand-title-gradient: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
   --bg-dropdown: #ffffff;
+  --bg-toast: rgba(255, 255, 255, 0.9);
 }
 
 
@@ -642,7 +644,7 @@ tr:last-child td {
 }
 
 .toast {
-  background: rgba(10, 20, 38, 0.9);
+  background: var(--bg-toast);
   border: 1px solid var(--primary);
   box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
   border-radius: 8px;
@@ -1072,13 +1074,19 @@ tr:last-child td {
               width 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
               height 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
-
-#notifPopover {
+#notifPopover {
   background: var(--bg-card) !important;
   border-color: var(--border-color) !important;
 }
 
 /* Light mode text contrast overrides */
+.light .toast {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #0f172a !important;
+  border-color: rgba(37, 99, 235, 0.3) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+}
+
 .light .text-white,
 .light .text-slate-50 {
   color: var(--text-main) !important;

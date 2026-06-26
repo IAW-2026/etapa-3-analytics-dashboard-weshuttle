@@ -109,7 +109,7 @@ export default function DashboardPage() {
 
   // Date states
   const [dateFilter, setDateFilter] = useState<
-    "1day" | "7days" | "15days" | "30days" | "custom"
+    "1day" | "7days" | "15days" | "30days" | "90days" | "all" | "custom"
   >("15days");
   const [dateFilterText, setDateFilterText] = useState("Últimos 15 días");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -253,7 +253,7 @@ export default function DashboardPage() {
 
   // Handle Dropdown Filter Item click
   const handleRangeSelect = (
-    type: "1day" | "7days" | "15days" | "30days" | "custom"
+    type: "1day" | "7days" | "15days" | "30days" | "90days" | "all" | "custom"
   ) => {
     setDateFilter(type);
     setShowDropdown(false);
@@ -279,6 +279,12 @@ export default function DashboardPage() {
       } else if (type === "30days") {
         newStart.setDate(today.getDate() - 30);
         label = "Últimos 30 días";
+      } else if (type === "90days") {
+        newStart.setDate(today.getDate() - 90);
+        label = "Últimos 3 meses";
+      } else if (type === "all") {
+        newStart.setFullYear(2025, 0, 1); // January 1, 2025
+        label = "Todos";
       }
 
       setDateFilterText(label);
@@ -707,6 +713,18 @@ export default function DashboardPage() {
                       onClick={() => handleRangeSelect("30days")}
                     >
                       Últimos 30 días
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleRangeSelect("90days")}
+                    >
+                      Últimos 3 meses
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleRangeSelect("all")}
+                    >
+                      Todos
                     </button>
                   </div>
                 </div>
@@ -1834,6 +1852,18 @@ export default function DashboardPage() {
                       onClick={() => handleRangeSelect("30days")}
                     >
                       Últimos 30 días
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleRangeSelect("90days")}
+                    >
+                      Últimos 3 meses
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={() => handleRangeSelect("all")}
+                    >
+                      Todos
                     </button>
                     <button
                       className="dropdown-item"
