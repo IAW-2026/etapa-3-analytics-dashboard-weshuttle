@@ -24,6 +24,7 @@ interface AnalyticsMeta {
   isFeedbackOnline: boolean;
   isRiderOnline: boolean;
   isDriverOnline?: boolean;
+  isPaymentsOnline?: boolean;
 }
 
 // Recharts Custom Tooltip
@@ -105,8 +106,8 @@ export default function DashboardPage() {
   // Theme state: 'dark' | 'light'
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
-  // Segment Filter State (All, Rider, Driver)
-  const [activeAppFilter, setActiveAppFilter] = useState<"All" | "Rider" | "Driver">("Rider");
+  // Segment Filter State (All, Rider, Driver, Payments)
+  const [activeAppFilter, setActiveAppFilter] = useState<"All" | "Rider" | "Driver" | "Payments">("All");
 
   // Date states
   const [dateFilter, setDateFilter] = useState<
@@ -459,13 +460,66 @@ export default function DashboardPage() {
   }
 
   // Payments App connection indicator
-  alertItems.push({
-    id: "payments-unintegrated",
-    type: "muted",
-    icon: "cloud_off",
-    title: "Payments App no integrada",
-    desc: "La conexión con Payments App no está activa en esta etapa.",
-  });
+  if (meta && !meta.isPaymentsOnline) {
+    alertItems.push({
+      id: "payments-offline",
+      type: "coral",
+      icon: "error",
+      title: "Payments App offline",
+      desc: "El dashboard no puede obtener los datos financieros ni transacciones.",
+    });
+  }
+
+  // Decision Signals from Payments App
+  if (metrics?.payments?.decisionSignals) {
+    metrics.payments.decisionSignals.forEach((signal, idx) => {
+      alertItems.push({
+        id: `payment-signal-${idx}`,
+        type: signal.severity === "critical" || signal.severity === "warning" ? "coral" : "blue",
+        icon: signal.severity === "critical" || signal.severity === "warning" ? "warning" : "info",
+        title: signal.title,
+        desc: signal.message,
+      });
+    });
+  }
+
+  // Cross-Module Insights
+  const completedPools = metrics?.driver?.poolsByStatus?.COMPLETED || 0;
+  const pendingAmount = metrics?.payments?.settlementsPendingAmount || 0;
+  if (completedPools > 0 && pendingAmount > 0) {
+    alertItems.push({
+      id: "cross-driver-payments",
+      type: "coral",
+      icon: "gavel",
+      title: "Liquidaciones Pendientes",
+      desc: `Hay ${completedPools} viajes finalizados pero quedan ${formatCurrency(pendingAmount)} retenidos por transferir a los choferes.`,
+    });
+  }
+
+  const rejectionRate = metrics?.payments?.paymentRejectionRate || 0;
+  const hasCriticalReviews = metrics?.worstReviews && metrics.worstReviews.length > 0;
+  if (rejectionRate > 5 && hasCriticalReviews) {
+    alertItems.push({
+      id: "cross-feedback-payments",
+      type: "blue",
+      icon: "report_problem",
+      title: "Correlación de Fallas de Pago",
+      desc: `La tasa de rechazo es del ${rejectionRate}%. Existe una posible correlación con comentarios negativos en la Feedback App.`,
+    });
+  }
+
+  const totalPaidReservations = (metrics?.reservationsByStatus?.CONFIRMED || 0) + (metrics?.reservationsByStatus?.PENDING_DRIVER || 0);
+  const totalRev = metrics?.payments?.totalRevenue || 0;
+  if (totalRev > 0 && totalPaidReservations > 0) {
+    const avgSeatRevenue = Math.round(totalRev / totalPaidReservations);
+    alertItems.push({
+      id: "cross-rider-payments",
+      type: "blue",
+      icon: "analytics",
+      title: "Rendimiento por Asiento",
+      desc: `El valor de ingreso promedio por asiento pagado es de ${formatCurrency(avgSeatRevenue)}.`,
+    });
+  }
 
   if (metrics?.totalReservations && metrics.totalReservations > 60) {
     alertItems.push({
@@ -476,6 +530,34 @@ export default function DashboardPage() {
       desc: "Polo Petroquímico registra el 50% de las reservas totales.",
     });
   }
+
+  // Filter alert items dynamically based on selected app filter
+  const filteredAlertItems = alertItems.filter((item) => {
+    if (activeAppFilter === "All") return true;
+    if (activeAppFilter === "Rider") {
+      return (
+        item.id === "rider-offline" ||
+        item.id === "demand-info" ||
+        item.id === "cross-rider-payments"
+      );
+    }
+    if (activeAppFilter === "Driver") {
+      return (
+        item.id === "driver-offline" ||
+        item.id === "cross-driver-payments"
+      );
+    }
+    if (activeAppFilter === "Payments") {
+      return (
+        item.id === "payments-offline" ||
+        item.id?.startsWith("payment-signal-") ||
+        item.id === "cross-driver-payments" ||
+        item.id === "cross-feedback-payments" ||
+        item.id === "cross-rider-payments"
+      );
+    }
+    return false;
+  });
 
   // Stars renderer
   const renderStars = (rating: number) => {
@@ -516,7 +598,7 @@ export default function DashboardPage() {
     "Admin User";
 
   // Determine service health
-  const someOffline = meta && (!meta.isFeedbackOnline || !meta.isRiderOnline || !meta.isDriverOnline);
+  const someOffline = meta && (!meta.isFeedbackOnline || !meta.isRiderOnline || !meta.isDriverOnline || !meta.isPaymentsOnline);
 
   return (
     <div className="app-container">
@@ -661,6 +743,15 @@ export default function DashboardPage() {
                     }}
                   >
                     Driver App
+                  </button>
+                  <button
+                    className={`segment-btn ${activeAppFilter === "Payments" ? "active" : ""}`}
+                    onClick={() => {
+                      setActiveAppFilter("Payments");
+                      showToast(`Filtro: Payments App ${meta?.isPaymentsOnline ? "(Online)" : "(Offline)"}`, "payments");
+                    }}
+                  >
+                    Payments App
                   </button>
                 </div>
 
@@ -821,14 +912,19 @@ export default function DashboardPage() {
                   >
                     Driver App: {meta?.isDriverOnline ? "Online" : "Offline"}
                   </span>
+                  <span
+                    className={`resilience-badge ${meta?.isPaymentsOnline ? "online" : "mocked"
+                      }`}
+                  >
+                    Payments App: {meta?.isPaymentsOnline ? "Online" : "Offline"}
+                  </span>
                 </div>
               </div>
             )}
 
-            {/* KPI Grid */}
             <section className="kpi-grid">
               {/* KPI 1 — Reservas Totales */}
-              <div className={`kpi-card ${activeAppFilter === "Driver" ? "opacity-30" : ""}`}>
+              <div className={`kpi-card ${activeAppFilter === "Driver" || activeAppFilter === "Payments" ? "opacity-30" : ""}`}>
                 <div className="kpi-header">
                   <span className="kpi-title">Reservas Totales</span>
                   <div className="kpi-icon blue">
@@ -870,7 +966,7 @@ export default function DashboardPage() {
               </div>
 
               {/* KPI 2 — Ingresos Totales */}
-              <div className={`kpi-card ${activeAppFilter === "Driver" ? "opacity-30" : ""}`}>
+              <div className={`kpi-card ${activeAppFilter === "Driver" || activeAppFilter === "Rider" ? "opacity-30" : ""}`}>
                 <div className="kpi-header">
                   <span className="kpi-title">Ingresos Totales</span>
                   <div className="kpi-icon green">
@@ -881,7 +977,11 @@ export default function DashboardPage() {
                   <div className="h-8 w-32 bg-white/5 rounded animate-pulse my-2" />
                 ) : (
                   <div className="kpi-value text-white">
-                    {metrics?.totalAmountCharged != null ? formatCurrency(metrics.totalAmountCharged) : "—"}
+                    {metrics?.payments?.totalRevenue != null
+                      ? formatCurrency(metrics.payments.totalRevenue)
+                      : metrics?.totalAmountCharged != null
+                        ? formatCurrency(metrics.totalAmountCharged)
+                        : "—"}
                   </div>
                 )}
 
@@ -912,7 +1012,7 @@ export default function DashboardPage() {
               </div>
 
               {/* KPI 3 — Conductores Activos */}
-              <div className={`kpi-card ${activeAppFilter === "Rider" ? "opacity-30" : ""}`}>
+              <div className={`kpi-card ${activeAppFilter === "Rider" || activeAppFilter === "Payments" ? "opacity-30" : ""}`}>
                 <div className="kpi-header">
                   <span className="kpi-title">Conductores Activos</span>
                   <div className="kpi-icon orange">
@@ -934,7 +1034,7 @@ export default function DashboardPage() {
               </div>
 
               {/* KPI 4 — Calificación Promedio */}
-              <div className="kpi-card">
+              <div className={`kpi-card ${activeAppFilter === "Payments" ? "opacity-30" : ""}`}>
                 <div className="kpi-header">
                   <span className="kpi-title">Calificación Promedio</span>
                   <div className="kpi-icon purple" style={{ color: "#8b5cf6", background: "rgba(139, 92, 246, 0.1)" }}>
@@ -980,6 +1080,38 @@ export default function DashboardPage() {
                 </div>
               </div>
             </section>
+
+            {/* Consolidated Business Insights (Insights Automáticos) at the top of Dashboard */}
+            {filteredAlertItems.length > 0 && (
+              <div className="insight-alert-card mb-6">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-blue-400 mb-3">
+                  <span className="material-symbols-outlined" style={{ fontSize: "1.2rem" }}>lightbulb</span>
+                  {activeAppFilter === "All"
+                    ? "Descubrimientos de Negocio (Insights Automáticos Consolidados)"
+                    : activeAppFilter === "Payments"
+                      ? "Descubrimientos de Negocio (Insights Automáticos - Payments App)"
+                      : activeAppFilter === "Rider"
+                        ? "Descubrimientos de Negocio (Insights Automáticos - Rider App)"
+                        : "Descubrimientos de Negocio (Insights Automáticos - Driver App)"
+                  }
+                </h3>
+                <div className="flex flex-col gap-2">
+                  {filteredAlertItems.map((item, idx) => (
+                    <div key={idx} className="insight-alert-item">
+                      <span className={`material-symbols-outlined insight-alert-icon ${
+                        item.type === "coral" ? "text-rose-400" : "text-blue-400"
+                      }`} style={{ fontSize: "1.1rem" }}>
+                        {item.icon === "error" || item.icon === "warning" || item.icon === "report_problem" ? "warning" : item.icon === "gavel" ? "gavel" : "info"}
+                      </span>
+                      <p className="text-xs text-slate-300">
+                        <strong className="text-slate-200">{item.title}: </strong>
+                        {item.desc}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Charts Section */}
             {(activeAppFilter === "Rider" || activeAppFilter === "All") && (
@@ -1944,8 +2076,530 @@ export default function DashboardPage() {
                       Sugerencias operativas calculadas en tiempo real.
                     </div>
                   </div>
-                </section>
-              </>)}
+              </section>
+            </>)}
+
+            {/* Payments/Finance Section on Main Dashboard */}
+            {(activeAppFilter === "Payments" || activeAppFilter === "All") && (
+              <>
+                {/* Header or subtitle for Payments section when All is selected */}
+                {activeAppFilter === "All" && (
+                  <div className="col-span-full mt-8 mb-4 border-t border-slate-800/30 pt-6">
+                    <h3 className="text-lg font-bold text-slate-300 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-emerald-500">payments</span>
+                      Métricas Financieras (Payments App)
+                    </h3>
+                  </div>
+                )}
+
+                {metrics?.payments ? (
+                  (() => {
+                    const totalRevenue = metrics.payments.totalRevenue || 0;
+                    const averageTicket = metrics.payments.averageTicket || 0;
+                    const paymentRejectionRate = metrics.payments.paymentRejectionRate || 0;
+                    const totalCreditsApplied = metrics.payments.totalCreditsApplied || 0;
+                    const totalCreditsGranted = metrics.payments.totalCreditsGranted || 0;
+                    const creditsGrantedRate = metrics.payments.creditsGrantedRate || 0;
+                    const netRevenueAfterCredits = metrics.payments.netRevenueAfterCredits || 0;
+                    const settlementsPendingAmount = metrics.payments.settlementsPendingAmount || 0;
+                    const settlementsPaidAmount = metrics.payments.settlementsPaidAmount || 0;
+
+                    const safeDiv = (num: number, den: number) => den > 0 ? ((num / den) * 100).toFixed(1) : "0.0";
+
+                    // Auto business insights for payments
+                    const autoInsights = [];
+                    if (paymentRejectionRate > 10) {
+                      autoInsights.push({
+                        text: `⚠️ Alta tasa de rechazo: El ${paymentRejectionRate}% de los cobros fueron rechazados. Revise la pasarela Mercado Pago.`,
+                        icon: "warning",
+                        type: "coral",
+                      });
+                    } else {
+                      autoInsights.push({
+                        text: `💡 Pasarela Saludable: La tasa de cobros aprobados es óptima (${(100 - paymentRejectionRate).toFixed(1)}%).`,
+                        icon: "info",
+                        type: "blue",
+                      });
+                    }
+
+                    if (totalCreditsGranted > 0) {
+                      autoInsights.push({
+                        text: `💡 Reembolso por Ajuste: Se han devuelto ${formatCurrency(totalCreditsGranted)} (${creditsGrantedRate}%) a usuarios por cancelaciones de pools.`,
+                        icon: "credit_card",
+                        type: creditsGrantedRate > 5 ? "coral" : "blue",
+                      });
+                    }
+
+                    if (settlementsPendingAmount > 0) {
+                      autoInsights.push({
+                        text: `⚠️ Deuda a Choferes: Quedan ${formatCurrency(settlementsPendingAmount)} retenidos por transferir a conductores de pools cerrados.`,
+                        icon: "account_balance_wallet",
+                        type: "coral",
+                      });
+                    } else {
+                      autoInsights.push({
+                        text: "💡 Liquidaciones al día: No se registran deudas pendientes acumuladas con los conductores.",
+                        icon: "check_circle",
+                        type: "blue",
+                      });
+                    }
+
+                    if (netRevenueAfterCredits > 0) {
+                      const netPct = safeDiv(netRevenueAfterCredits, totalRevenue);
+                      autoInsights.push({
+                        text: `🌟 Salud de Caja: El ingreso neto retenido representa el ${netPct}% de la facturación bruta.`,
+                        icon: "analytics",
+                        type: Number(netPct) > 90 ? "blue" : "coral",
+                      });
+                    }
+
+                    if (metrics.payments.decisionSignals) {
+                      metrics.payments.decisionSignals.forEach((signal) => {
+                        autoInsights.push({
+                          text: `${signal.severity === "critical" ? "⚠️" : "💡"} ${signal.title}: ${signal.message}`,
+                          icon: signal.severity === "critical" ? "warning" : "info",
+                          type: signal.severity === "critical" ? "coral" : "blue",
+                        });
+                      });
+                    }
+
+                    return (
+                      <>
+                        {/* Financial Indicators & Automated Insights Grid */}
+                        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 mt-6">
+                          {/* Indicadores de Rendimiento Financiero */}
+                          <div className="card">
+                            <div className="card-header pb-1 mb-2">
+                              <h3 className="card-title">Indicadores de Rendimiento Financiero</h3>
+                              <p className="text-xs text-slate-400">Análisis detallado de eficiencia, retención y transacciones.</p>
+                            </div>
+                            <div className="table-container mt-4">
+                              <table>
+                                <thead>
+                                  <tr>
+                                    <th>Indicador Financiero</th>
+                                    <th>Métrica / Valor</th>
+                                    <th>Significado Analítico</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td>
+                                      <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-emerald-400">payments</span>
+                                        <div>
+                                          <span className="font-bold">Facturación Bruta Total</span>
+                                          <p className="text-[10px] text-slate-400">Total recaudado por cobros aprobados</p>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <span className="font-bold text-slate-200">{formatCurrency(totalRevenue)}</span>
+                                    </td>
+                                    <td>Volumen monetario total capturado por el sistema de reservas.</td>
+                                  </tr>
+                                  <tr>
+                                    <td>
+                                      <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-blue-400">analytics</span>
+                                        <div>
+                                          <span className="font-bold">Ticket Promedio</span>
+                                          <p className="text-[10px] text-slate-400">Valor de recaudación promedio por reserva</p>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <span className="font-bold text-blue-400">{formatCurrency(averageTicket)}</span>
+                                    </td>
+                                    <td>Representa el gasto promedio de un pasajero por plaza reservada.</td>
+                                  </tr>
+                                  <tr>
+                                    <td>
+                                      <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-rose-400">warning</span>
+                                        <div>
+                                          <span className="font-bold">Tasa de Rechazo de Pagos</span>
+                                          <p className="text-[10px] text-slate-400">Transacciones denegadas sobre el total</p>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <span className="font-bold text-rose-400">{paymentRejectionRate}%</span>
+                                    </td>
+                                    <td>Mide la fricción en la pasarela. Un valor alto indica fallas con tarjetas o pasarelas.</td>
+                                  </tr>
+                                  <tr>
+                                    <td>
+                                      <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-amber-400">currency_exchange</span>
+                                        <div>
+                                          <span className="font-bold">Tasa de Retorno en Créditos</span>
+                                          <p className="text-[10px] text-slate-400">Créditos otorgados por pools cancelados</p>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <span className="font-bold text-amber-400">{creditsGrantedRate}%</span>
+                                    </td>
+                                    <td>Monto reembolsado a pasajeros debido a pools cancelados (ajustes a favor).</td>
+                                  </tr>
+                                  <tr>
+                                    <td>
+                                      <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-purple-400">account_balance_wallet</span>
+                                        <div>
+                                          <span className="font-bold">Deuda Activa a Conductores</span>
+                                          <p className="text-[10px] text-slate-400">Fondos retenidos pendientes de liquidación</p>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <span className="font-bold text-purple-400">{formatCurrency(settlementsPendingAmount)}</span>
+                                    </td>
+                                    <td>Monto total por transferir a las cuentas bancarias de los conductores.</td>
+                                  </tr>
+                                  <tr>
+                                    <td>
+                                      <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-cyan-400">account_balance</span>
+                                        <div>
+                                          <span className="font-bold">Retención Neta de Caja</span>
+                                          <p className="text-[10px] text-slate-400">Dinero retenido por WeShuttle</p>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <span className="font-bold text-cyan-400">
+                                        {((netRevenueAfterCredits / (totalRevenue || 1)) * 100).toFixed(1)}%
+                                      </span>
+                                    </td>
+                                    <td>Porcentaje del ingreso total que queda en caja tras compensaciones y reembolsos.</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+
+                          {/* Descubrimientos de Negocio Card */}
+                          <div className="card flex flex-col justify-between">
+                            <div className="card-header pb-1 mb-2">
+                              <h3 className="card-title flex items-center gap-2">
+                                <span className="material-symbols-outlined text-blue-500">lightbulb</span>
+                                Descubrimientos de Negocio (Insights Automáticos)
+                              </h3>
+                              <span className="live-badge !m-0 !py-0.5 text-[9px] !bg-blue-950/20 !border-blue-900/30 !text-blue-400">
+                                Inteligente
+                              </span>
+                            </div>
+                            {autoInsights.length > 0 ? (
+                              <div className="insight-alert-card flex-grow mt-4 !my-0">
+                                <div className="flex flex-col gap-2 max-h-[260px] overflow-y-auto pr-1">
+                                  {autoInsights.map((insight, idx) => (
+                                    <div key={idx} className="insight-alert-item">
+                                      <span className={`material-symbols-outlined insight-alert-icon ${
+                                        insight.type === "coral" ? "text-rose-400" : "text-blue-400"
+                                      }`} style={{ fontSize: "1.1rem" }}>
+                                        {insight.icon === "credit_card" ? "credit_card" : insight.icon === "account_balance_wallet" ? "account_balance_wallet" : insight.icon === "check_circle" ? "check_circle" : insight.icon === "warning" ? "warning" : "info"}
+                                      </span>
+                                      <p className="text-xs text-slate-300">
+                                        {insight.text.replace("💡 ", "").replace("⚠️ ", "").replace("🌟 ", "").replace("🏆 ", "")}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="p-6 text-center text-slate-500 text-sm flex-grow flex items-center justify-center">
+                                No se registran descubrimientos automáticos en este período.
+                              </div>
+                            )}
+                          </div>
+                        </section>
+
+                        {/* Financial Charts Grid */}
+                        <section className="charts-grid mt-6">
+                          {/* Tendencias Financieras */}
+                          <div className="card" style={{ minWidth: 0 }}>
+                            <div className="card-header">
+                              <h3 className="card-title">Tendencias Financieras</h3>
+                              <p className="text-xs text-slate-400">Evolución de ingresos diarios vs créditos de pool otorgados.</p>
+                            </div>
+                            <div className="chart-container">
+                              {metrics.payments.financialTrends && metrics.payments.financialTrends.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <AreaChart data={metrics.payments.financialTrends} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                                    <defs>
+                                      <linearGradient id="colorRevenueDashboard" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                      </linearGradient>
+                                      <linearGradient id="colorCreditsDashboard" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
+                                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                                      </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                                    <XAxis
+                                      dataKey="date"
+                                      stroke="#475569"
+                                      fontSize={10}
+                                      tickLine={false}
+                                      axisLine={false}
+                                      tickFormatter={(val) => {
+                                        const parts = val.split("-");
+                                        return parts.length === 3 ? `${parts[2]}/${parts[1]}` : val;
+                                      }}
+                                    />
+                                    <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
+                                    <Tooltip
+                                      isAnimationActive={false}
+                                      content={({ active, payload, label }) => {
+                                        if (active && payload && payload.length) {
+                                          return (
+                                            <div className="bg-[#161925] border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 shadow-xl">
+                                              <p className="font-bold text-blue-400 mb-1">{label}</p>
+                                              {payload.map((pld) => (
+                                                <p key={pld.name} style={{ color: pld.color || pld.stroke }}>
+                                                  {pld.name === "revenue" ? "Ingresos: " : "Créditos: "}
+                                                  {formatCurrency(pld.value as number)}
+                                                </p>
+                                              ))}
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      }}
+                                    />
+                                    <Area
+                                      type="monotone"
+                                      dataKey="revenue"
+                                      name="revenue"
+                                      stroke="#10b981"
+                                      strokeWidth={3}
+                                      fillOpacity={1}
+                                      fill="url(#colorRevenueDashboard)"
+                                    />
+                                    <Area
+                                      type="monotone"
+                                      dataKey="creditsGranted"
+                                      name="creditsGranted"
+                                      stroke="#ef4444"
+                                      strokeWidth={2}
+                                      fillOpacity={1}
+                                      fill="url(#colorCreditsDashboard)"
+                                    />
+                                  </AreaChart>
+                                </ResponsiveContainer>
+                              ) : (
+                                <div className="flex h-full items-center justify-center text-slate-500 text-sm">Sin datos en este período.</div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Desglose de Transacciones */}
+                          <div className="card flex flex-col justify-between" style={{ minWidth: 0 }}>
+                            <div className="card-header pb-1 mb-2">
+                              <h3 className="card-title">Desglose de Transacciones</h3>
+                              <p className="text-xs text-slate-400">Total de cobros e intentos agrupados por estado.</p>
+                            </div>
+                            <div className="relative flex justify-center items-center h-[200px] w-full">
+                              {(() => {
+                                const txnColors: Record<string, string> = {
+                                  PAID: "#10b981",
+                                  DENIED: "#f43f5e",
+                                  PENDING: "#f59e0b",
+                                  CANCELED: "#64748b",
+                                  EXPIRED: "#94a3b8",
+                                  FAILED: "#ef4444",
+                                };
+                                const txnLabels: Record<string, string> = {
+                                  PAID: "Pagados",
+                                  DENIED: "Rechazados",
+                                  PENDING: "Pendientes",
+                                  CANCELED: "Cancelados",
+                                  EXPIRED: "Expirados",
+                                  FAILED: "Fallidos",
+                                };
+                                const txnData = Object.entries(metrics.payments.transactionStats)
+                                  .filter(([_, val]) => val > 0)
+                                  .map(([key, val]) => ({
+                                    name: txnLabels[key] || key,
+                                    value: val,
+                                    color: txnColors[key] || "#94a3b8",
+                                  }));
+                                const totalTxns = txnData.reduce((acc, curr) => acc + curr.value, 0);
+
+                                if (totalTxns === 0) {
+                                  return <div className="text-slate-500 text-xs">Sin transacciones registradas</div>;
+                                }
+
+                                return (
+                                  <>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                      <PieChart>
+                                        <Pie
+                                          data={txnData}
+                                          cx="50%"
+                                          cy="50%"
+                                          innerRadius={50}
+                                          outerRadius={75}
+                                          paddingAngle={3}
+                                          dataKey="value"
+                                        >
+                                          {txnData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                          ))}
+                                        </Pie>
+                                        <Tooltip
+                                          isAnimationActive={false}
+                                          content={({ active, payload }) => {
+                                            if (active && payload && payload.length) {
+                                              const data = payload[0].payload;
+                                              return (
+                                                <div className="bg-[#161925] border border-slate-800 rounded px-2 py-1 text-[10px] text-slate-200">
+                                                  {data.name}: <span className="font-bold">{data.value}</span> transacciones
+                                                </div>
+                                              );
+                                            }
+                                            return null;
+                                          }}
+                                        />
+                                      </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="absolute flex flex-col items-center justify-center">
+                                      <span className="text-2xl font-bold text-slate-200">{totalTxns}</span>
+                                      <span className="text-[8px] uppercase tracking-wider text-slate-500">Transac.</span>
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[10px] font-semibold text-slate-400 mt-2 border-t border-slate-800/50 pt-3">
+                              <div className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-[#10b981]"></span>
+                                <span>Pagado</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-[#f43f5e]"></span>
+                                <span>Rechazado</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span>
+                                <span>Pendiente</span>
+                              </div>
+                            </div>
+                          </div>
+                        </section>
+
+                        {/* Balance sheet & settlements tables */}
+                        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 mt-6">
+                          {/* Balance General Consolidado */}
+                          <div className="card lg:col-span-2">
+                            <div className="card-header pb-1 mb-2">
+                              <h3 className="card-title">Balance General Consolidado</h3>
+                              <p className="text-xs text-slate-400">Resumen contable consolidado de cobros, reintegros y transferencias.</p>
+                            </div>
+                            <div className="table-container mt-4">
+                              <table>
+                                <thead>
+                                  <tr>
+                                    <th>Concepto Contable</th>
+                                    <th>Monto</th>
+                                    <th>Participación</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td className="font-bold text-slate-200">Facturación Bruta (Ingresos)</td>
+                                    <td className="font-bold text-emerald-400">{formatCurrency(totalRevenue)}</td>
+                                    <td className="text-slate-400">100.0%</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="text-slate-300">Créditos Aplicados (Por Usuarios)</td>
+                                    <td className="text-blue-400">{formatCurrency(totalCreditsApplied)}</td>
+                                    <td className="text-slate-400">{safeDiv(totalCreditsApplied, totalRevenue)}%</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="text-slate-300">Créditos Otorgados (Devoluciones)</td>
+                                    <td className="text-rose-400">-{formatCurrency(totalCreditsGranted)}</td>
+                                    <td className="text-slate-400">-{safeDiv(totalCreditsGranted, totalRevenue)}%</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="text-slate-300">Liquidaciones Transferidas a Choferes</td>
+                                    <td className="text-slate-300">-{formatCurrency(settlementsPaidAmount)}</td>
+                                    <td className="text-slate-400">-{safeDiv(settlementsPaidAmount, totalRevenue)}%</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="text-slate-300">Liquidaciones Retenidas (Deuda Viva)</td>
+                                    <td className="text-amber-400">-{formatCurrency(settlementsPendingAmount)}</td>
+                                    <td className="text-slate-400">-{safeDiv(settlementsPendingAmount, totalRevenue)}%</td>
+                                  </tr>
+                                  <tr style={{ borderTop: "2px solid var(--border-color)" }}>
+                                    <td className="font-bold text-slate-100">Caja Neta Retenida (WeShuttle)</td>
+                                    <td className="font-bold text-emerald-400">{formatCurrency(totalRevenue - totalCreditsGranted - settlementsPaidAmount)}</td>
+                                    <td className="font-bold text-emerald-400">
+                                      {safeDiv(totalRevenue - totalCreditsGranted - settlementsPaidAmount, totalRevenue)}%
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+
+                          {/* Settlements breakdown */}
+                          <div className="card">
+                            <div className="card-header pb-1 mb-2">
+                              <h3 className="card-title">Liquidaciones a Choferes</h3>
+                              <p className="text-xs text-slate-400">Estado de transferencias por viajes completados.</p>
+                            </div>
+                            <div className="table-container mt-4">
+                              <table>
+                                <thead>
+                                  <tr>
+                                    <th>Estado</th>
+                                    <th>Viajes</th>
+                                    <th>Auditoría</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td className="font-bold text-slate-200">Completado</td>
+                                    <td className="font-bold text-emerald-400">{metrics.payments.settlementStats.COMPLETED}</td>
+                                    <td><span className="status-badge paid">Exitoso</span></td>
+                                  </tr>
+                                  <tr>
+                                    <td className="font-bold text-slate-200">Pendiente</td>
+                                    <td className="font-bold text-amber-400">{metrics.payments.settlementStats.PENDING}</td>
+                                    <td><span className="status-badge pending">En espera</span></td>
+                                  </tr>
+                                  <tr>
+                                    <td className="font-bold text-slate-200">Fallido</td>
+                                    <td className="font-bold text-rose-400">{metrics.payments.settlementStats.FAILED}</td>
+                                    <td><span className="status-badge denied">Rechazado</span></td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </section>
+                      </>
+                    );
+                  })()
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 card text-center mt-6">
+                    <span className="material-symbols-outlined text-5xl text-rose-500 mb-4 animate-pulse">
+                      payments
+                    </span>
+                    <h3 className="text-xl font-bold text-slate-200 mb-2">
+                      Payments App Desconectada
+                    </h3>
+                    <p className="text-slate-400 max-w-md text-sm mb-6">
+                      No se puede obtener la información financiera porque la Payments App se encuentra temporalmente fuera de línea.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
           </>
         )}
 
@@ -2808,6 +3462,674 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
+          </>
+        )}
+
+        {/* Transactions View */}
+        {activeTab === "Transactions" && (
+          <>
+            <header className="dashboard-header flex justify-between items-center mb-6">
+              <div className="header-title">
+                <h2>Transacciones y Finanzas</h2>
+                <p>Auditoría financiera consolidada de WeShuttle a través de Payments App.</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <button onClick={() => setActiveTab("Dashboard")} className="pill flex items-center gap-1">
+                  <span className="material-symbols-outlined" style={{ fontSize: "1.1rem" }}>arrow_back</span>
+                  Dashboard
+                </button>
+              </div>
+            </header>
+
+            {!loading && metrics?.payments ? (
+              (() => {
+                const totalRevenue = metrics.payments.totalRevenue || 0;
+                const averageTicket = metrics.payments.averageTicket || 0;
+                const paymentRejectionRate = metrics.payments.paymentRejectionRate || 0;
+                const totalCreditsApplied = metrics.payments.totalCreditsApplied || 0;
+                const totalCreditsGranted = metrics.payments.totalCreditsGranted || 0;
+                const creditsGrantedRate = metrics.payments.creditsGrantedRate || 0;
+                const netRevenueAfterCredits = metrics.payments.netRevenueAfterCredits || 0;
+                const settlementsPendingAmount = metrics.payments.settlementsPendingAmount || 0;
+                const settlementsPaidAmount = metrics.payments.settlementsPaidAmount || 0;
+
+                const safeDiv = (num: number, den: number) => den > 0 ? ((num / den) * 100).toFixed(1) : "0.0";
+
+                // Auto business insights
+                const autoInsights = [];
+                if (paymentRejectionRate > 10) {
+                  autoInsights.push({
+                    text: `⚠️ Alta tasa de rechazo: El ${paymentRejectionRate}% de los cobros fueron rechazados. Revise la pasarela Mercado Pago.`,
+                    icon: "warning",
+                    type: "coral",
+                  });
+                } else {
+                  autoInsights.push({
+                    text: `💡 Pasarela Saludable: La tasa de cobros aprobados es óptima (${(100 - paymentRejectionRate).toFixed(1)}%).`,
+                    icon: "info",
+                    type: "blue",
+                  });
+                }
+
+                if (totalCreditsGranted > 0) {
+                  autoInsights.push({
+                    text: `💡 Reembolso por Ajuste: Se han devuelto ${formatCurrency(totalCreditsGranted)} (${creditsGrantedRate}%) a usuarios por cancelaciones de pools.`,
+                    icon: "credit_card",
+                    type: creditsGrantedRate > 5 ? "coral" : "blue",
+                  });
+                }
+
+                if (settlementsPendingAmount > 0) {
+                  autoInsights.push({
+                    text: `⚠️ Deuda a Choferes: Quedan ${formatCurrency(settlementsPendingAmount)} retenidos por transferir a conductores de pools cerrados.`,
+                    icon: "account_balance_wallet",
+                    type: "coral",
+                  });
+                } else {
+                  autoInsights.push({
+                    text: "💡 Liquidaciones al día: No se registran deudas pendientes acumuladas con los conductores.",
+                    icon: "check_circle",
+                    type: "blue",
+                  });
+                }
+
+                if (netRevenueAfterCredits > 0) {
+                  const netPct = safeDiv(netRevenueAfterCredits, totalRevenue);
+                  autoInsights.push({
+                    text: `🌟 Salud de Caja: El ingreso neto retenido representa el ${netPct}% de la facturación bruta.`,
+                    icon: "analytics",
+                    type: Number(netPct) > 90 ? "blue" : "coral",
+                  });
+                }
+
+                // Add API decision signals to insights
+                if (metrics.payments.decisionSignals) {
+                  metrics.payments.decisionSignals.forEach((signal) => {
+                    autoInsights.push({
+                      text: `${signal.severity === "critical" ? "⚠️" : "💡"} ${signal.title}: ${signal.message}`,
+                      icon: signal.severity === "critical" ? "warning" : "info",
+                      type: signal.severity === "critical" ? "coral" : "blue",
+                    });
+                  });
+                }
+
+                return (
+                  <>
+                    {/* Payments KPIs Grid */}
+                    <section className="kpi-grid mb-6">
+                      {/* KPI 1 - Ingresos Totales */}
+                      <div className="kpi-card">
+                        <div className="kpi-header">
+                          <span className="kpi-title">Ingresos Totales</span>
+                          <div className="kpi-icon green">
+                            <span className="material-symbols-outlined">payments</span>
+                          </div>
+                        </div>
+                        <div className="kpi-value text-white">
+                          {formatCurrency(totalRevenue)}
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-2">
+                          Recaudación total de cobros exitosos
+                        </div>
+                      </div>
+
+                      {/* KPI 2 - Ticket Promedio */}
+                      <div className="kpi-card">
+                        <div className="kpi-header">
+                          <span className="kpi-title">Ticket Promedio</span>
+                          <div className="kpi-icon blue">
+                            <span className="material-symbols-outlined">analytics</span>
+                          </div>
+                        </div>
+                        <div className="kpi-value text-white">
+                          {formatCurrency(averageTicket)}
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-2">
+                          Valor promedio por viaje pagado
+                        </div>
+                      </div>
+
+                      {/* KPI 3 - Tasa de Rechazo */}
+                      <div className="kpi-card">
+                        <div className="kpi-header">
+                          <span className="kpi-title">Tasa de Rechazo</span>
+                          <div className="kpi-icon orange" style={{ color: "#f43f5e", background: "rgba(244, 63, 94, 0.1)" }}>
+                            <span className="material-symbols-outlined">warning</span>
+                          </div>
+                        </div>
+                        <div className="kpi-value text-white">
+                          {paymentRejectionRate}%
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-2">
+                          Pagos denegados sobre el total
+                        </div>
+                      </div>
+
+                      {/* KPI 4 - Deuda Conductor */}
+                      <div className="kpi-card">
+                        <div className="kpi-header">
+                          <span className="kpi-title">Deuda a Liquidar</span>
+                          <div className="kpi-icon purple" style={{ color: "#a78bfa", background: "rgba(167, 139, 250, 0.1)" }}>
+                            <span className="material-symbols-outlined">account_balance_wallet</span>
+                          </div>
+                        </div>
+                        <div className="kpi-value text-white">
+                          {formatCurrency(settlementsPendingAmount)}
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-2">
+                          Monto pendiente de transferir a choferes
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Financial Indicators & Automated Insights Grid */}
+                    <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                      {/* Indicadores de Rendimiento Financiero */}
+                      <div className="card">
+                        <div className="card-header pb-1 mb-2">
+                          <h3 className="card-title">Indicadores de Rendimiento Financiero</h3>
+                          <p className="text-xs text-slate-400">Análisis detallado de eficiencia, retención y transacciones.</p>
+                        </div>
+                        <div className="table-container mt-4">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Indicador Financiero</th>
+                                <th>Métrica / Valor</th>
+                                <th>Significado Analítico</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-emerald-400">payments</span>
+                                    <div>
+                                      <span className="font-bold">Facturación Bruta Total</span>
+                                      <p className="text-[10px] text-slate-400">Total recaudado por cobros aprobados</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="font-bold text-slate-200">{formatCurrency(totalRevenue)}</span>
+                                </td>
+                                <td>Volumen monetario total capturado por el sistema de reservas.</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-blue-400">analytics</span>
+                                    <div>
+                                      <span className="font-bold">Ticket Promedio</span>
+                                      <p className="text-[10px] text-slate-400">Valor de recaudación promedio por reserva</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="font-bold text-blue-400">{formatCurrency(averageTicket)}</span>
+                                </td>
+                                <td>Representa el gasto promedio de un pasajero por plaza reservada.</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-rose-400">warning</span>
+                                    <div>
+                                      <span className="font-bold">Tasa de Rechazo de Pagos</span>
+                                      <p className="text-[10px] text-slate-400">Transacciones denegadas sobre el total</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="font-bold text-rose-400">{paymentRejectionRate}%</span>
+                                </td>
+                                <td>Mide la fricción en la pasarela. Un valor alto indica fallas con tarjetas o pasarelas.</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-amber-400">currency_exchange</span>
+                                    <div>
+                                      <span className="font-bold">Tasa de Retorno en Créditos</span>
+                                      <p className="text-[10px] text-slate-400">Créditos otorgados por pools cancelados</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="font-bold text-amber-400">{creditsGrantedRate}%</span>
+                                </td>
+                                <td>Monto reembolsado a pasajeros debido a pools cancelados (ajustes a favor).</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-purple-400">account_balance_wallet</span>
+                                    <div>
+                                      <span className="font-bold">Deuda Activa a Conductores</span>
+                                      <p className="text-[10px] text-slate-400">Fondos retenidos pendientes de liquidación</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="font-bold text-purple-400">{formatCurrency(settlementsPendingAmount)}</span>
+                                </td>
+                                <td>Monto total por transferir a las cuentas bancarias de los conductores.</td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-cyan-400">account_balance</span>
+                                    <div>
+                                      <span className="font-bold">Retención Neta de Caja</span>
+                                      <p className="text-[10px] text-slate-400">Dinero retenido por WeShuttle</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="font-bold text-cyan-400">
+                                    {((netRevenueAfterCredits / (totalRevenue || 1)) * 100).toFixed(1)}%
+                                  </span>
+                                </td>
+                                <td>Porcentaje del ingreso total que queda en caja tras compensaciones y reembolsos.</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Descubrimientos de Negocio Card */}
+                      <div className="card flex flex-col justify-between">
+                        <div className="card-header pb-1 mb-2">
+                          <h3 className="card-title flex items-center gap-2">
+                            <span className="material-symbols-outlined text-blue-500">lightbulb</span>
+                            Descubrimientos de Negocio (Insights Automáticos)
+                          </h3>
+                          <span className="live-badge !m-0 !py-0.5 text-[9px] !bg-blue-950/20 !border-blue-900/30 !text-blue-400">
+                            Inteligente
+                          </span>
+                        </div>
+                        {autoInsights.length > 0 ? (
+                          <div className="insight-alert-card flex-grow mt-4 !my-0">
+                            <div className="flex flex-col gap-2 max-h-[260px] overflow-y-auto pr-1">
+                              {autoInsights.map((insight, idx) => (
+                                <div key={idx} className="insight-alert-item">
+                                  <span className={`material-symbols-outlined insight-alert-icon ${
+                                    insight.type === "coral" ? "text-rose-400" : "text-blue-400"
+                                  }`} style={{ fontSize: "1.1rem" }}>
+                                    {insight.icon === "credit_card" ? "credit_card" : insight.icon === "account_balance_wallet" ? "account_balance_wallet" : insight.icon === "check_circle" ? "check_circle" : insight.icon === "warning" ? "warning" : "info"}
+                                  </span>
+                                  <p className="text-xs text-slate-300">
+                                    {insight.text.replace("💡 ", "").replace("⚠️ ", "").replace("🌟 ", "").replace("🏆 ", "")}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-6 text-center text-slate-500 text-sm flex-grow flex items-center justify-center">
+                            No se registran descubrimientos automáticos en este período.
+                          </div>
+                        )}
+                      </div>
+                    </section>
+
+                    {/* Main financial charts */}
+                    <section className="charts-grid mb-6">
+                      {/* Trend Chart */}
+                      <div className="card" style={{ minWidth: 0 }}>
+                        <div className="card-header">
+                          <h3 className="card-title">Tendencias Financieras</h3>
+                          <p className="text-xs text-slate-400">Evolución de ingresos diarios vs créditos de pool otorgados.</p>
+                        </div>
+                        <div className="chart-container">
+                          {metrics.payments.financialTrends && metrics.payments.financialTrends.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={metrics.payments.financialTrends} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                                <defs>
+                                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                  </linearGradient>
+                                  <linearGradient id="colorCredits" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
+                                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                                <XAxis
+                                  dataKey="date"
+                                  stroke="#475569"
+                                  fontSize={10}
+                                  tickLine={false}
+                                  axisLine={false}
+                                  tickFormatter={(val) => {
+                                    const parts = val.split("-");
+                                    return parts.length === 3 ? `${parts[2]}/${parts[1]}` : val;
+                                  }}
+                                />
+                                <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
+                                <Tooltip
+                                  isAnimationActive={false}
+                                  content={({ active, payload, label }) => {
+                                    if (active && payload && payload.length) {
+                                      return (
+                                        <div className="bg-[#161925] border border-slate-800 rounded px-3 py-2 text-xs text-slate-200 shadow-xl">
+                                          <p className="font-bold text-blue-400 mb-1">{label}</p>
+                                          {payload.map((pld) => (
+                                            <p key={pld.name} style={{ color: pld.color || pld.stroke }}>
+                                              {pld.name === "revenue" ? "Ingresos: " : "Créditos: "}
+                                              {formatCurrency(pld.value as number)}
+                                            </p>
+                                          ))}
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  }}
+                                />
+                                <Area
+                                  type="monotone"
+                                  dataKey="revenue"
+                                  name="revenue"
+                                  stroke="#10b981"
+                                  strokeWidth={3}
+                                  fillOpacity={1}
+                                  fill="url(#colorRevenue)"
+                                />
+                                <Area
+                                  type="monotone"
+                                  dataKey="creditsGranted"
+                                  name="creditsGranted"
+                                  stroke="#ef4444"
+                                  strokeWidth={2}
+                                  fillOpacity={1}
+                                  fill="url(#colorCredits)"
+                                />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-slate-500 text-sm">Sin datos de tendencias financieras en este período.</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Transaction breakdown Pie Chart */}
+                      <div className="card flex flex-col justify-between" style={{ minWidth: 0 }}>
+                        <div className="card-header pb-1 mb-2">
+                          <h3 className="card-title">Desglose de Transacciones</h3>
+                          <p className="text-xs text-slate-400">Total de cobros e intentos agrupados por estado.</p>
+                        </div>
+                        <div className="relative flex justify-center items-center h-[200px] w-full">
+                          {(() => {
+                            const txnColors: Record<string, string> = {
+                              PAID: "#10b981",
+                              DENIED: "#f43f5e",
+                              PENDING: "#f59e0b",
+                              CANCELED: "#64748b",
+                              EXPIRED: "#94a3b8",
+                              FAILED: "#ef4444",
+                            };
+                            const txnLabels: Record<string, string> = {
+                              PAID: "Pagados",
+                              DENIED: "Rechazados",
+                              PENDING: "Pendientes",
+                              CANCELED: "Cancelados",
+                              EXPIRED: "Expirados",
+                              FAILED: "Fallidos",
+                            };
+                            const txnData = Object.entries(metrics.payments.transactionStats)
+                              .filter(([_, val]) => val > 0)
+                              .map(([key, val]) => ({
+                                name: txnLabels[key] || key,
+                                value: val,
+                                color: txnColors[key] || "#94a3b8",
+                              }));
+                            const totalTxns = txnData.reduce((acc, curr) => acc + curr.value, 0);
+
+                            if (totalTxns === 0) {
+                              return <div className="text-slate-500 text-xs">Sin transacciones registradas</div>;
+                            }
+
+                            return (
+                              <>
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <PieChart>
+                                    <Pie
+                                      data={txnData}
+                                      cx="50%"
+                                      cy="50%"
+                                      innerRadius={50}
+                                      outerRadius={75}
+                                      paddingAngle={3}
+                                      dataKey="value"
+                                    >
+                                      {txnData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                      ))}
+                                    </Pie>
+                                    <Tooltip
+                                      isAnimationActive={false}
+                                      content={({ active, payload }) => {
+                                        if (active && payload && payload.length) {
+                                          const data = payload[0].payload;
+                                          return (
+                                            <div className="bg-[#161925] border border-slate-800 rounded px-2 py-1 text-[10px] text-slate-200">
+                                              {data.name}: <span className="font-bold">{data.value}</span> transacciones
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      }}
+                                    />
+                                  </PieChart>
+                                </ResponsiveContainer>
+                                <div className="absolute flex flex-col items-center justify-center">
+                                  <span className="text-2xl font-bold text-slate-200">{totalTxns}</span>
+                                  <span className="text-[8px] uppercase tracking-wider text-slate-500">Transac.</span>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                        {/* Colors legend */}
+                        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[10px] font-semibold text-slate-400 mt-2 border-t border-slate-800/50 pt-3">
+                          <div className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-[#10b981]"></span>
+                            <span>Pagado</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-[#f43f5e]"></span>
+                            <span>Rechazado</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span>
+                            <span>Pendiente</span>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Data Tables Grid: Balance Sheet & Settlements */}
+                    <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                      {/* Balance General Consolidado */}
+                      <div className="card lg:col-span-2">
+                        <div className="card-header pb-1 mb-2">
+                          <h3 className="card-title">Balance General Consolidado</h3>
+                          <p className="text-xs text-slate-400">Resumen contable consolidado de cobros, reintegros y transferencias.</p>
+                        </div>
+                        <div className="table-container mt-4">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Concepto Contable</th>
+                                <th>Monto</th>
+                                <th>Participación</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="font-bold text-slate-200">Facturación Bruta (Ingresos)</td>
+                                <td className="font-bold text-emerald-400">{formatCurrency(totalRevenue)}</td>
+                                <td className="text-slate-400">100.0%</td>
+                              </tr>
+                              <tr>
+                                <td className="text-slate-300">Créditos Aplicados (Por Usuarios)</td>
+                                <td className="text-blue-400">{formatCurrency(totalCreditsApplied)}</td>
+                                <td className="text-slate-400">{safeDiv(totalCreditsApplied, totalRevenue)}%</td>
+                              </tr>
+                              <tr>
+                                <td className="text-slate-300">Créditos Otorgados (Devoluciones)</td>
+                                <td className="text-rose-400">-{formatCurrency(totalCreditsGranted)}</td>
+                                <td className="text-slate-400">-{safeDiv(totalCreditsGranted, totalRevenue)}%</td>
+                              </tr>
+                              <tr>
+                                <td className="text-slate-300">Liquidaciones Transferidas a Choferes</td>
+                                <td className="text-slate-300">-{formatCurrency(settlementsPaidAmount)}</td>
+                                <td className="text-slate-400">-{safeDiv(settlementsPaidAmount, totalRevenue)}%</td>
+                              </tr>
+                              <tr>
+                                <td className="text-slate-300">Liquidaciones Retenidas (Deuda Viva)</td>
+                                <td className="text-amber-400">-{formatCurrency(settlementsPendingAmount)}</td>
+                                <td className="text-slate-400">-{safeDiv(settlementsPendingAmount, totalRevenue)}%</td>
+                              </tr>
+                              <tr style={{ borderTop: "2px solid var(--border-color)" }}>
+                                <td className="font-bold text-slate-100">Caja Neta Retenida (WeShuttle)</td>
+                                <td className="font-bold text-emerald-400">{formatCurrency(totalRevenue - totalCreditsGranted - settlementsPaidAmount)}</td>
+                                <td className="font-bold text-emerald-400">
+                                  {safeDiv(totalRevenue - totalCreditsGranted - settlementsPaidAmount, totalRevenue)}%
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Settlements Breakdown Card */}
+                      <div className="card">
+                        <div className="card-header pb-1 mb-2">
+                          <h3 className="card-title">Liquidaciones a Choferes</h3>
+                          <p className="text-xs text-slate-400">Estado de transferencias por viajes completados.</p>
+                        </div>
+                        <div className="table-container mt-4">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Estado</th>
+                                <th>Viajes</th>
+                                <th>Auditoría</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="font-bold text-slate-200">Completado</td>
+                                <td className="font-bold text-emerald-400">{metrics.payments.settlementStats.COMPLETED}</td>
+                                <td><span className="status-badge paid">Exitoso</span></td>
+                              </tr>
+                              <tr>
+                                <td className="font-bold text-slate-200">Pendiente</td>
+                                <td className="font-bold text-amber-400">{metrics.payments.settlementStats.PENDING}</td>
+                                <td><span className="status-badge pending">En espera</span></td>
+                              </tr>
+                              <tr>
+                                <td className="font-bold text-slate-200">Fallido</td>
+                                <td className="font-bold text-rose-400">{metrics.payments.settlementStats.FAILED}</td>
+                                <td><span className="status-badge denied">Rechazado</span></td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Cross-Module Correlations Section */}
+                    <section className="mb-6">
+                      {/* Cross-Module Correlations Card */}
+                      <div className="card">
+                        <div className="card-header pb-1 mb-2">
+                          <h3 className="card-title">Análisis de Negocio Cruzado</h3>
+                          <p className="text-xs text-slate-400">Correlaciones automáticas entre módulos y finanzas.</p>
+                        </div>
+                        <div className="table-container mt-4">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Cruze de Módulos</th>
+                                <th>Métrica Calculada</th>
+                                <th>Diagnóstico del Sistema</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {/* Rider x Payments */}
+                              {(() => {
+                                const totalPaid = (metrics?.reservationsByStatus?.CONFIRMED || 0) + (metrics?.reservationsByStatus?.PENDING_DRIVER || 0);
+                                const avgSeat = totalPaid > 0 ? Math.round(totalRevenue / totalPaid) : 0;
+                                return (
+                                  <tr>
+                                    <td className="font-bold text-slate-200">Rider App x Payments</td>
+                                    <td className="text-emerald-400 font-bold">{avgSeat > 0 ? formatCurrency(avgSeat) : "—"} / asiento</td>
+                                    <td>Ingreso promedio capturado por asiento confirmado.</td>
+                                  </tr>
+                                );
+                              })()}
+
+                              {/* Driver x Payments */}
+                              {(() => {
+                                const completedPools = metrics?.driver?.poolsByStatus?.COMPLETED || 0;
+                                return (
+                                  <tr>
+                                    <td className="font-bold text-slate-200">Driver App x Payments</td>
+                                    <td className="text-rose-400 font-bold">{formatCurrency(settlementsPendingAmount)} deuda</td>
+                                    <td>
+                                      {completedPools > 0 && settlementsPendingAmount > 0 ? (
+                                        <span className="text-rose-400 font-medium">⚠️ Riesgo de queja: Viajes completados con saldos retenidos.</span>
+                                      ) : (
+                                        <span className="text-emerald-400 font-medium">✅ Liquidaciones al día con choferes.</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })()}
+
+                              {/* Feedback x Payments */}
+                              {(() => {
+                                return (
+                                  <tr>
+                                    <td className="font-bold text-slate-200">Feedback App x Payments</td>
+                                    <td className="text-amber-400 font-bold">{paymentRejectionRate}% fallos</td>
+                                    <td>
+                                      {paymentRejectionRate > 10 ? (
+                                        <span className="text-amber-400 font-medium">⚠️ Alto rechazo. Puede correlacionar con calificaciones bajas.</span>
+                                      ) : (
+                                        <span className="text-emerald-400 font-medium">✅ Tasa de rechazo estable.</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })()}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </section>
+                  </>
+                );
+              })()
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 card text-center">
+                <span className="material-symbols-outlined text-5xl text-rose-500 mb-4 animate-pulse">
+                  payments
+                </span>
+                <h3 className="text-xl font-bold text-slate-200 mb-2">
+                  Payments App Desconectada
+                </h3>
+                <p className="text-slate-400 max-w-md text-sm mb-6">
+                  No se puede obtener la información financiera porque la Payments App se encuentra temporalmente fuera de línea.
+                </p>
+                <button onClick={() => setActiveTab("Dashboard")} className="pill active">
+                  Volver al Dashboard
+                </button>
+              </div>
+            )}
           </>
         )}
 

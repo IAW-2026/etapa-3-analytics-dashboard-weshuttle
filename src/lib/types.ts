@@ -124,4 +124,59 @@ export interface AnalyticsMetrics {
 
   // From Driver App
   driver: DriverMetrics | null;
+
+  // From Payments App
+  payments: PaymentsMetrics | null;
 }
+
+export interface TransactionStats {
+  PAID: number;
+  DENIED: number;
+  PENDING: number;
+  CANCELED: number;
+  EXPIRED: number;
+  FAILED: number;
+}
+
+export interface SettlementStats {
+  PENDING: number;
+  COMPLETED: number;
+  FAILED: number;
+}
+
+export interface FinancialTrendPoint {
+  date: string;
+  revenue: number;
+  creditsGranted: number;
+  successfulPayments: number;
+  rejectedPayments: number;
+}
+
+export interface DecisionSignal {
+  type: string;
+  severity: string;
+  title: string;
+  message: string;
+  value?: number;
+  threshold?: number;
+}
+
+export interface PaymentsMetrics {
+  totalRevenue: number;
+  successfulPaymentsCount: number;
+  rejectedPaymentsCount: number;
+  pendingPaymentsCount: number;
+  paymentRejectionRate: number;
+  averageTicket: number;
+  totalCreditsApplied: number;
+  totalCreditsGranted: number;
+  creditsGrantedRate: number;
+  netRevenueAfterCredits: number;
+  transactionStats: TransactionStats;
+  settlementStats: SettlementStats;
+  settlementsPendingAmount: number;
+  settlementsPaidAmount: number;
+  financialTrends: FinancialTrendPoint[];
+  decisionSignals: DecisionSignal[];
+}
+

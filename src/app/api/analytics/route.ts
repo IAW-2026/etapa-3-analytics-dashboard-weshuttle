@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { RatingTrendPoint, ReviewItem } from "@/lib/types";
+import { RatingTrendPoint, ReviewItem, PaymentsMetrics } from "@/lib/types";
 
 interface DriverMetrics {
   totalPools?: number;
@@ -83,6 +83,7 @@ export async function GET(request: NextRequest) {
   const feedbackAppApiUrl = process.env.FEEDBACK_APP_API_URL;
   const riderAppApiUrl = process.env.RIDER_APP_API_URL;
   const driverAppApiUrl = process.env.DRIVER_APP_API_URL;
+  const paymentsAppApiUrl = process.env.PAYMENTS_APP_API_URL;
 
   // Fetch Feedback App metrics
   const feedbackPromise = feedbackAppApiUrl
@@ -120,22 +121,36 @@ export async function GET(request: NextRequest) {
     })
     : Promise.reject(new Error("DRIVER_APP_API_URL is not configured"));
 
+  // Fetch Payments App metrics
+  const paymentsPromise = paymentsAppApiUrl
+    ? fetch(`${paymentsAppApiUrl}/api/analytics/metrics?start_date=${start}&end_date=${end}`, {
+      signal: AbortSignal.timeout(6000),
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${process.env.ANALYTICS_API_KEY || ""}`,
+      },
+    })
+    : Promise.reject(new Error("PAYMENTS_APP_API_URL is not configured"));
+
   // Fetch all endpoints concurrently
-  const [feedbackResult, riderResult, driverResult] = await Promise.allSettled([
+  const [feedbackResult, riderResult, driverResult, paymentsResult] = await Promise.allSettled([
     feedbackPromise,
     riderPromise,
     driverPromise,
+    paymentsPromise,
   ]);
 
   const responseStatus: Record<string, { status: string; error: string | null }> = {
     feedback: { status: "unknown", error: null },
     rider: { status: "unknown", error: null },
     driver: { status: "unknown", error: null },
+    payments: { status: "unknown", error: null },
   };
 
   let feedbackData: FeedbackMetrics | null = null;
   let riderData: RiderSummaryMetrics | null = null;
   let driverData: DriverMetrics | null = null;
+  let paymentsData: { metrics: PaymentsMetrics } | null = null;
 
   // Helper to parse settled fetch results
   const parseResult = async <T>(
@@ -176,6 +191,7 @@ export async function GET(request: NextRequest) {
   feedbackData = await parseResult<FeedbackMetrics>(feedbackResult, "feedback");
   riderData = await parseResult<RiderSummaryMetrics>(riderResult, "rider");
   driverData = await parseResult<DriverMetrics>(driverResult, "driver");
+  paymentsData = await parseResult<{ metrics: PaymentsMetrics }>(paymentsResult, "payments");
 
   // Build metrics only from real data — no mocks, no fallbacks with invented values
   const metrics = {
@@ -203,6 +219,9 @@ export async function GET(request: NextRequest) {
 
     // From Driver App
     driver: driverData ?? null,
+
+    // From Payments App
+    payments: paymentsData?.metrics ?? null,
   };
 
   return NextResponse.json({
@@ -214,6 +233,7 @@ export async function GET(request: NextRequest) {
       isFeedbackOnline: responseStatus.feedback.status === "success",
       isRiderOnline: responseStatus.rider.status === "success",
       isDriverOnline: responseStatus.driver.status === "success",
+      isPaymentsOnline: responseStatus.payments.status === "success",
     },
   });
 }
